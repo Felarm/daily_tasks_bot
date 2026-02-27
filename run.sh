@@ -1,0 +1,1 @@
+export $(grep -v '^#' .env | xargs) && fastapi run main.py
