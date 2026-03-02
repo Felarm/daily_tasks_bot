@@ -2,13 +2,13 @@ from datetime import date, datetime, time
 from typing import Sequence, TypeVar, Generic, Type
 
 from loguru import logger
-from sqlalchemy import select, insert, delete
+from sqlalchemy import select, insert, delete, update
 from sqlalchemy.exc import SQLAlchemyError, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.database import Base
 from db.models import User, DailyTask
-
+from db.schemas import NotifySettingsSchema
 
 T = TypeVar("T", bound=Base)
 
@@ -65,10 +65,15 @@ class UserDao(BaseDao[User]):
             result = await self._session.execute(query)
             return result.scalar_one_or_none()
         except SQLAlchemyError as e:
-            logger.error(f"Error occurred while attempt to get user by its {username=}:\n{e}")
+            logger.error(f"Error occurred while attempting to get user by its {username=}:\n{e}")
 
-    async def update_user_settings(self):
-        pass
+    async def update_user_notify_settings(self, user_id: int, new_values: NotifySettingsSchema):
+        user = await self.get_one_or_none_by_id(user_id)
+        user.notify_settings = new_values.model_dump()
+        try:
+            await self._session.commit()
+        except SQLAlchemyError as e:
+            logger.error(f"Error occurred while attempting to update notify_settings of user with {user_id=}\n{e}")
 
 
 class DailyTaskDao(BaseDao[DailyTask]):

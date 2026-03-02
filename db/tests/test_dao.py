@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import pytest
 
 from db.dao import UserDao, DailyTaskDao
+from db.schemas import NotifySettingsSchema
 
 
 class TestUserDao:
@@ -67,6 +68,21 @@ class TestUserDao:
         and_another_user_obj = await UserDao(session).get_by_username(another_user_obj.username)
         assert another_user_obj == and_another_user_obj
         assert another_user_obj is and_another_user_obj
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("new_notify_settings", [{"enabled": False, "mins_before_dt_start": [1, 2, 3]}])
+    async def test_update_user_notify_settings(self, session, daily_task_user_id, new_notify_settings):
+        user_obj = await UserDao(session).get_one_or_none_by_id(daily_task_user_id)
+        before_settings = NotifySettingsSchema(**user_obj.notify_settings)
+        assert before_settings.enabled == True
+        assert before_settings.mins_before_dt_start == [5]
+        await UserDao(session).update_user_notify_settings(
+            daily_task_user_id,
+            NotifySettingsSchema(**new_notify_settings),
+        )
+        after_settings = NotifySettingsSchema(**user_obj.notify_settings)
+        assert after_settings.enabled == False
+        assert after_settings.mins_before_dt_start == [1, 2, 3]
 
 
 class TestDailyTaskDao:

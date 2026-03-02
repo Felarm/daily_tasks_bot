@@ -4,7 +4,7 @@ from aiogram.types import Update
 from fastapi import FastAPI, Request
 from loguru import logger
 
-from bot.main import start_bot, bot, dp, stop_bot
+from bot.service import start_bot, bot, dp, stop_bot
 from config import jobs_scheduler, settings
 from db.init_db import init_db
 

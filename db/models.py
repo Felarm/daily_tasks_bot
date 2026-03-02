@@ -2,21 +2,24 @@ import enum
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import CheckConstraint, String, ForeignKey, DateTime, Enum, Integer, JSON
-from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy import CheckConstraint, String, ForeignKey, DateTime, Enum, Integer, JSON, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from db.database import Base
+from db.schemas import NotifySettingsSchema
 
 
 class User(Base):
     __tablename__ = "users"
 
-    username: Mapped[str] = mapped_column(String(100), unique=True)
+    username: Mapped[str] = mapped_column(String(255), unique=True)
     id: Mapped[int] = mapped_column(Integer, unique=True, primary_key=True, autoincrement=False)
-    first_name: Mapped[str | None] = mapped_column(String)
-    last_name: Mapped[str | None] = mapped_column(String)
-    language_code: Mapped[str | None] = mapped_column(String)
+    first_name: Mapped[str | None] = mapped_column(String(255))
+    last_name: Mapped[str | None] = mapped_column(String(255))
+    language_code: Mapped[str | None] = mapped_column(String(100))
+    notify_settings: Mapped[dict[str, Any]] = mapped_column(
+        JSON, default=lambda: NotifySettingsSchema().model_dump(),
+    )
 
 
 class DTaskState(enum.Enum):
@@ -36,9 +39,9 @@ class DailyTask(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(100))
+    name: Mapped[str] = mapped_column(String(255))
     description: Mapped[str | None] = mapped_column(String)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     start_dt: Mapped[datetime] = mapped_column(DateTime)
     end_dt: Mapped[datetime] = mapped_column(DateTime)
     state: Mapped[DTaskState] = mapped_column(Enum(DTaskState), default=DTaskState.created)

@@ -92,7 +92,7 @@ async def create_confirmation(callback: CallbackQuery, widget, dialog_manager: D
             text="yay! we created new task, now you can try to find it in your tasks list",
             reply_markup=main_user_kb(),
         )
-        SchedulerService.add_task_notify_job(created_task.to_dict(exclude_none=True))
+        await SchedulerService.add_task_notify_job(created_task.to_dict(exclude_none=True))
         await dialog_manager.done()
 
 
@@ -113,5 +113,5 @@ async def copy_confirmation(callback: CallbackQuery, widget, dialog_manager: Dia
         text=f"task copied to date {new_start_dt.isoformat(' ')}",
         reply_markup=main_user_kb(),
     )
-    SchedulerService.add_task_notify_job(new_task.to_dict(exclude_none=True))
+    await SchedulerService.add_task_notify_job(new_task.to_dict(exclude_none=True))
     await dialog_manager.done()

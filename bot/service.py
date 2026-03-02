@@ -1,19 +1,12 @@
-from aiogram import Bot, Dispatcher
-from aiogram.client.default import DefaultBotProperties
-from aiogram.enums import ParseMode
-from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import BotCommand, BotCommandScopeDefault
 from aiogram_dialog import setup_dialogs
 from loguru import logger
 
+from bot.base import bot, dp
 from bot.daily_tasks_dialogs.dialog import task_creation_dialog_router, task_copy_dialog_router
 from bot.users.router import user_router
 from config import settings
 from bot.database_middleware import DBMiddlewareWithoutCommit, DBMiddlewareWithCommit
-
-
-bot = Bot(token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-dp = Dispatcher(storage=MemoryStorage())
 
 
 async def set_commands():
