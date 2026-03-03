@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import pytest
 
 from db.dao import UserDao, DailyTaskDao
+from db.models import DTaskState
 from db.schemas import NotifySettingsSchema
 
 
@@ -147,3 +148,20 @@ class TestDailyTaskDao:
         await DailyTaskDao(session).delete_daily_task(task_id=present_daily_task.id)
         present_tasks = await DailyTaskDao(session).get_user_daily_tasks(daily_task_user_id)
         assert present_tasks == []
+
+    @pytest.mark.asyncio
+    async def test_change_daily_task_state_success(self, session, present_daily_task):
+        await DailyTaskDao(session).change_daily_task_state(present_daily_task.id, DTaskState.done)
+        assert present_daily_task.state == DTaskState.done.value
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        argnames="real_start_dt, real_end_dt",
+        argvalues=[(datetime.now(), datetime.now() + timedelta(minutes=2))])
+    async def test_set_real_start_end_dts(self, session, present_daily_task, real_start_dt, real_end_dt):
+        await DailyTaskDao(session).set_daily_task_real_start_dt(present_daily_task.id, real_start_dt)
+        assert present_daily_task.real_start_dt is not None
+        assert present_daily_task.real_start_dt == real_start_dt
+        await DailyTaskDao(session).set_daily_task_real_end_dt(present_daily_task.id, real_end_dt)
+        assert present_daily_task.real_end_dt is not None
+        assert present_daily_task.real_end_dt == real_end_dt

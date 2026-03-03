@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Awaitable
 
 from aiogram_dialog import Window
 from aiogram_dialog.widgets.input import MessageInput
@@ -7,8 +8,9 @@ from aiogram_dialog.widgets.text import Const, Format
 
 from bot.daily_tasks_dialogs.getters import get_confirmed_new_task_info, get_confirmed_copy_task_info
 from bot.daily_tasks_dialogs.handlers import cancel_creation, process_name, process_description, process_start_date, \
-    process_start_time, process_end_time, process_end_date, create_confirmation, copy_confirmation
-from bot.daily_tasks_dialogs.states import DailyTaskCreationStates, DailyTaskCopyStates
+    process_start_time, process_end_time, process_end_date, create_confirmation, copy_confirmation, begin_approval, \
+    begin_disapproval, end_approval, end_disapproval
+from bot.daily_tasks_dialogs.states import DailyTaskCreationStates, DailyTaskCopyStates, DailyTaskProgressStates
 
 
 class NewDailyTaskCreationWindows:
@@ -133,4 +135,24 @@ class CopyDailyTaskWindows:
             Back(Const("back")),
             state=DailyTaskCopyStates.confirmation,
             getter=get_confirmed_copy_task_info,
+        )
+
+
+class TaskBeginWindows:
+    @staticmethod
+    def get_task_begin_window() -> Window:
+        return Window(
+            Const("uhh, bruh, did u begin task?"),
+            Button(Const("yup"), id="approve", on_click=begin_approval),
+            Button(Const("nah, i missed somewhere in timeline"), id="disapprove", on_click=begin_disapproval),
+            state=DailyTaskProgressStates.begin_state,
+        )
+
+    @staticmethod
+    def get_task_end_window() -> Window:
+        return Window(
+            Const("bruh, did u end task?"),
+            Button(Const("yup"), id="approve", on_click=end_approval),
+            Button(Const("nope"), id="disapprove", on_click=end_disapproval),
+            state=DailyTaskProgressStates.end_state,
         )

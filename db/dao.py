@@ -7,7 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.database import Base
-from db.models import User, DailyTask
+from db.models import User, DailyTask, DTaskState
 from db.schemas import NotifySettingsSchema
 
 T = TypeVar("T", bound=Base)
@@ -120,3 +120,24 @@ class DailyTaskDao(BaseDao[DailyTask]):
             await self._session.execute(query)
         except SQLAlchemyError as e:
             logger.error(f"Error occurred while deleting task with {task_id=}:\n{e}")
+
+    async def change_daily_task_state(self, task_id: int, new_state: DTaskState) -> None:
+        query = update(self.model).where(self.model.id == task_id).values(state=new_state.value)
+        try:
+            await self._session.execute(query)
+        except SQLAlchemyError as e:
+            logger.error(f"Error occurred while changing task with {task_id=} state to {new_state.value}:\n{e}")
+
+    async def set_daily_task_real_start_dt(self, task_id: int, real_start_dt: datetime):
+        query = update(self.model).where(self.model.id == task_id).values(real_start_dt=real_start_dt)
+        try:
+            await self._session.execute(query)
+        except SQLAlchemyError as e:
+            logger.error(f"Error occurred while setting real_start_dt of task with {task_id=} to {real_start_dt}:\n{e}")
+
+    async def set_daily_task_real_end_dt(self, task_id: int, real_end_dt: datetime):
+        query = update(self.model).where(self.model.id == task_id).values(real_end_dt=real_end_dt)
+        try:
+            await self._session.execute(query)
+        except SQLAlchemyError as e:
+            logger.error(f"Error occurred while setting real_end_dt of task with {task_id=} to {real_end_dt}:\n{e}")

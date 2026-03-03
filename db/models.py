@@ -18,7 +18,7 @@ class User(Base):
     last_name: Mapped[str | None] = mapped_column(String(255))
     language_code: Mapped[str | None] = mapped_column(String(100))
     notify_settings: Mapped[dict[str, Any]] = mapped_column(
-        JSON, default=lambda: NotifySettingsSchema().model_dump(),
+        JSON, default=lambda: NotifySettingsSchema(enabled=True, mins_before_dt_start=[5]).model_dump(),
     )
 
 
