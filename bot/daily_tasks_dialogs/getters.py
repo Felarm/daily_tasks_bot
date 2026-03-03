@@ -23,7 +23,7 @@ async def get_confirmed_copy_task_info(dialog_manager: DialogManager, **_) -> di
     new_start_dt: datetime = dialog_manager.dialog_data["start_dt"]
     new_end_dt = new_start_dt + orig_task_duration
     confirm_text = (f"ok, we are going to make a copy of:\n"
-                    f"<b>task name</b>: {task_to_copy_data['name']}\n"
+                    f"<b>task name</b>: {task_to_copy_data.name}\n"
                     f"<b>new planned start</b>: {new_start_dt.isoformat(' ')}\n"
                     f"<b>new planned end</b>: {new_end_dt.isoformat(' ')}")
     return {"confirm_text": confirm_text}

@@ -1,19 +1,19 @@
 from datetime import date
-from typing import Awaitable
 
+from aiogram.fsm.state import State
 from aiogram_dialog import Window
 from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import Cancel, Back, Calendar, CalendarConfig, Button
 from aiogram_dialog.widgets.text import Const, Format
 
 from bot.daily_tasks_dialogs.getters import get_confirmed_new_task_info, get_confirmed_copy_task_info
-from bot.daily_tasks_dialogs.handlers import cancel_creation, process_name, process_description, process_start_date, \
-    process_start_time, process_end_time, process_end_date, create_confirmation, copy_confirmation, begin_approval, \
-    begin_disapproval, end_approval, end_disapproval
+from bot.daily_tasks_dialogs.handlers import cancel_creation, process_name, process_description, create_confirmation, \
+    copy_confirmation, begin_approval, \
+    begin_disapproval, end_approval, end_disapproval, process_time_period, process_date_period
 from bot.daily_tasks_dialogs.states import DailyTaskCreationStates, DailyTaskCopyStates, DailyTaskProgressStates
 
 
-class NewDailyTaskCreationWindows:
+class DailyTaskCreationWindows:
     @staticmethod
     def get_name_input_window() -> Window:
         return Window(
@@ -34,12 +34,12 @@ class NewDailyTaskCreationWindows:
         )
 
     @staticmethod
-    def get_start_date_input_window() -> Window:
+    def get_date_input_window(header: str, calendar_id: str, state: State) -> Window:
         return Window(
-            Const("input start date"),
+            Const(header),
             Calendar(
-                id="calendar",
-                on_click=process_start_date,
+                id=calendar_id,
+                on_click=process_date_period,
                 config=CalendarConfig(
                     firstweekday=0,
                     min_date=date.today()
@@ -47,44 +47,17 @@ class NewDailyTaskCreationWindows:
             ),
             Cancel(Const("cancel"), on_click=cancel_creation),
             Back(Const("back")),
-            state=DailyTaskCreationStates.task_start_date,
+            state=state,
         )
 
     @staticmethod
-    def get_start_time_input_window() -> Window:
+    def get_time_input_window(header: str, msg_input_id: str, state: State) -> Window:
         return Window(
-            Const("input start time in HH:MM format"),
-            MessageInput(process_start_time),
+            Const(header),
+            MessageInput(process_time_period, id=msg_input_id),
             Cancel(Const("cancel"), on_click=cancel_creation),
             Back(Const("back")),
-            state=DailyTaskCreationStates.task_start_time,
-        )
-
-    @staticmethod
-    def get_end_date_input_window() -> Window:
-        return Window(
-            Const("input end date"),
-            Calendar(
-                id="calendar",
-                on_click=process_end_date,
-                config=CalendarConfig(
-                    firstweekday=0,
-                    min_date=date.today()
-                )
-            ),
-            Cancel(Const("cancel"), on_click=cancel_creation),
-            Back(Const("back")),
-            state=DailyTaskCreationStates.task_end_date,
-        )
-
-    @staticmethod
-    def get_end_time_input_window() -> Window:
-        return Window(
-            Const("input end time"),
-            MessageInput(process_end_time),
-            Cancel(Const("cancel"), on_click=cancel_creation),
-            Back(Const("back")),
-            state=DailyTaskCreationStates.task_end_time,
+            state=state,
         )
 
     @staticmethod
@@ -100,32 +73,6 @@ class NewDailyTaskCreationWindows:
 
 
 class CopyDailyTaskWindows:
-    @staticmethod
-    def get_start_date_input_window() -> Window:
-        return Window(
-            Const("choose date to copy"),
-            Calendar(
-                id="calendar",
-                on_click=process_start_date,
-                config=CalendarConfig(
-                    firstweekday=0,
-                    min_date=date.today()
-                )
-            ),
-            Cancel(Const("cancel"), on_click=cancel_creation),
-            state=DailyTaskCopyStates.new_task_start_date,
-        )
-
-    @staticmethod
-    def get_start_time_input_window() -> Window:
-        return Window(
-            Const("input new start time in HH:MM format"),
-            MessageInput(process_start_time),
-            Cancel(Const("cancel"), on_click=cancel_creation),
-            Back(Const("back")),
-            state=DailyTaskCopyStates.new_task_start_time,
-        )
-
     @staticmethod
     def get_confirmation_window() -> Window:
         return Window(
