@@ -1,8 +1,9 @@
 from aiogram_dialog import Dialog
 
-from bot.daily_tasks_dialogs.handlers import DateTimeWidgetIds
+from bot.daily_tasks_dialogs.getters import get_confirmed_new_task_info, get_confirmed_copy_task_info
+from bot.daily_tasks_dialogs.handlers import DateTimeWidgetIds, ConfirmationWidgetIds
 from bot.daily_tasks_dialogs.states import DailyTaskCreationStates, DailyTaskCopyStates
-from bot.daily_tasks_dialogs.windows import DailyTaskCreationWindows, CopyDailyTaskWindows, TaskBeginWindows
+from bot.daily_tasks_dialogs.windows import DailyTaskCreationWindows, TaskBeginWindows
 
 task_creation_dialog_router = Dialog(
     DailyTaskCreationWindows.get_name_input_window(),
@@ -27,7 +28,11 @@ task_creation_dialog_router = Dialog(
         msg_input_id=DateTimeWidgetIds.end_dt.value,
         state=DailyTaskCreationStates.task_end_time,
     ),
-    DailyTaskCreationWindows.get_confirmation_window(),
+    DailyTaskCreationWindows.get_confirmation_window(
+        action_id=ConfirmationWidgetIds.create.value,
+        state=DailyTaskCreationStates.confirmation,
+        getter=get_confirmed_new_task_info,
+    ),
 )
 
 
@@ -42,7 +47,11 @@ task_copy_dialog_router = Dialog(
         msg_input_id=DateTimeWidgetIds.start_dt.value,
         state=DailyTaskCopyStates.new_task_start_time,
     ),
-    CopyDailyTaskWindows.get_confirmation_window(),
+    DailyTaskCreationWindows.get_confirmation_window(
+        action_id=ConfirmationWidgetIds.copy.value,
+        state=DailyTaskCopyStates.confirmation,
+        getter=get_confirmed_copy_task_info,
+    ),
 )
 
 

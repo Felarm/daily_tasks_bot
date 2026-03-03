@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Awaitable
 
 from aiogram.fsm.state import State
 from aiogram_dialog import Window
@@ -6,11 +7,9 @@ from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import Cancel, Back, Calendar, CalendarConfig, Button
 from aiogram_dialog.widgets.text import Const, Format
 
-from bot.daily_tasks_dialogs.getters import get_confirmed_new_task_info, get_confirmed_copy_task_info
 from bot.daily_tasks_dialogs.handlers import cancel_creation, process_name, process_description, create_confirmation, \
-    copy_confirmation, begin_approval, \
-    begin_disapproval, end_approval, end_disapproval, process_time_period, process_date_period
-from bot.daily_tasks_dialogs.states import DailyTaskCreationStates, DailyTaskCopyStates, DailyTaskProgressStates
+    begin_approval, begin_disapproval, end_approval, end_disapproval, process_time_period, process_date_period
+from bot.daily_tasks_dialogs.states import DailyTaskCreationStates, DailyTaskProgressStates
 
 
 class DailyTaskCreationWindows:
@@ -61,27 +60,14 @@ class DailyTaskCreationWindows:
         )
 
     @staticmethod
-    def get_confirmation_window() -> Window:
+    def get_confirmation_window(action_id: str, state: State, getter: Awaitable) -> Window:
         return Window(
             Format("{confirm_text}"),
-            Button(Const("wow, thanks"), id="confirm", on_click=create_confirmation),
+            Button(Const("wow, thanks"), id=action_id, on_click=create_confirmation),
             Cancel(Const("cancel"), on_click=cancel_creation),
             Back(Const("back")),
-            state=DailyTaskCreationStates.confirmation,
-            getter=get_confirmed_new_task_info,
-        )
-
-
-class CopyDailyTaskWindows:
-    @staticmethod
-    def get_confirmation_window() -> Window:
-        return Window(
-            Format("{confirm_text}"),
-            Button(Const("yay!"), id="confirm", on_click=copy_confirmation),
-            Cancel(Const("cancel"), on_click=cancel_creation),
-            Back(Const("back")),
-            state=DailyTaskCopyStates.confirmation,
-            getter=get_confirmed_copy_task_info,
+            state=state,
+            getter=getter,
         )
 
 

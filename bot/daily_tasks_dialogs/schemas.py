@@ -3,7 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
-class NewDailyTaskSchema(BaseModel):
+class DailyTaskSchema(BaseModel):
     user_id: int
     name: str
     description: str | None

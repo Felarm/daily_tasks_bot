@@ -7,9 +7,9 @@ from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import Button, ManagedCalendar
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.daily_tasks_dialogs.schemas import NewDailyTaskSchema, DTUnsavedSchema, DTBeginSchema
+from bot.daily_tasks_dialogs.schemas import DailyTaskSchema, DTBeginSchema
 from bot.users.keyboards import main_user_kb, task_control_kb
-from db.dao import UserDao, DailyTaskDao
+from db.dao import DailyTaskDao
 from db.models import DTaskState
 from scheduler.service import DailyTaskSchedulerService
 
@@ -17,6 +17,12 @@ from scheduler.service import DailyTaskSchedulerService
 class DateTimeWidgetIds(enum.Enum):
     start_dt = "start_dt"
     end_dt = "end_dt"
+
+
+class ConfirmationWidgetIds(enum.Enum):
+    create = "create"
+    copy = "copy"
+    delete = "delete"
 
 
 async def cancel_creation(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
@@ -90,42 +96,22 @@ async def process_time_period(msg: Message, msg_input: MessageInput, dialog_mgr:
         await dialog_mgr.next()
 
 
-async def create_confirmation(callback: CallbackQuery, widget, dialog_manager: DialogManager, **_):
+async def create_confirmation(callback: CallbackQuery, button: Button, dialog_manager: DialogManager, **_):
     session: AsyncSession = dialog_manager.middleware_data.get("session_with_commit")
-    user = await UserDao(session).get_one_or_none_by_id(callback.from_user.id)
-    if not user:
-        await callback.answer(f"how you did this? {callback.from_user.username} cant create tasks in our system")
-        await dialog_manager.done()
+    if button.widget_id == ConfirmationWidgetIds.create.value:
+        task_data = DailyTaskSchema(user_id=callback.from_user.id, **dialog_manager.dialog_data)
+    elif button.widget_id == ConfirmationWidgetIds.copy.value:
+        task_data = DailyTaskSchema(**dialog_manager.start_data["task_to_copy"])
+        task_to_copy_duration = task_data.end_dt - task_data.start_dt
+        new_start_dt: datetime = dialog_manager.dialog_data["start_dt"]
+        new_end_dt = new_start_dt + task_to_copy_duration
+        task_data.start_dt = new_start_dt
+        task_data.end_dt = new_end_dt
     else:
-        add_task = NewDailyTaskSchema(user_id=user.id, **dialog_manager.dialog_data)
-        created_task = await DailyTaskDao(session).create_user_daily_task(**add_task.model_dump())
-        await callback.message.answer(
-            text="yay! we created new task, now you can try to find it in your tasks list",
-            reply_markup=main_user_kb(),
-        )
-        await DailyTaskSchedulerService(
-            created_task,
-            callback.from_user.id,
-            callback.message.chat.id
-        ).add_tracker_jobs()
-        await dialog_manager.done()
-
-
-async def copy_confirmation(callback: CallbackQuery, widget, dialog_manager: DialogManager):
-    session: AsyncSession = dialog_manager.middleware_data.get("session_with_commit")
-    task_to_copy_data = DTUnsavedSchema(**dialog_manager.start_data["task_to_copy"])
-    new_start_dt: datetime = dialog_manager.dialog_data["start_dt"]
-    task_to_copy_duration = task_to_copy_data.end_dt - task_to_copy_data.start_dt
-    new_end_dt = new_start_dt + task_to_copy_duration
-    new_task = await DailyTaskDao(session).create_user_daily_task(
-        user_id=callback.from_user.id,
-        name=task_to_copy_data.name,
-        start_dt=new_start_dt,
-        end_dt=new_end_dt,
-        description=task_to_copy_data.description,
-    )
+        raise ValueError("unknow id of confirmation widget")
+    new_task = await DailyTaskDao(session).create_user_daily_task(**task_data.model_dump())
     await callback.message.answer(
-        text=f"task copied to date {new_start_dt.isoformat(' ')}",
+        text="yay! we created another task, now you can try to find it in your tasks list",
         reply_markup=main_user_kb(),
     )
     await DailyTaskSchedulerService(
