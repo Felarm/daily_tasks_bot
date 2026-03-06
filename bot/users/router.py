@@ -11,7 +11,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from bot.daily_tasks_dialogs.states import DailyTaskCreationStates, DailyTaskCopyStates
 from bot.users.keyboards import main_user_kb, task_control_kb, TaskAction
 from bot.users.schemas import NewUserSchema
-from db.dao import UserDao, DailyTaskDao
+from daily_task.dao import DailyTaskDao
+from user.dao import UserDao
+
 
 user_router = Router()
 

@@ -1,6 +1,6 @@
 from aiogram_dialog import StartMode
 
-from bot.base import bot, bg_factory, dp
+from bot.base import bot, bg_factory
 from bot.daily_tasks_dialogs.states import DailyTaskProgressStates
 
 

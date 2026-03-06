@@ -19,7 +19,4 @@ class DailyTaskCopyStates(StatesGroup):
 
 class DailyTaskProgressStates(StatesGroup):
     begin_state = State()
-    break_state = State()
     end_state = State()
-    success_state = State()
-    failed_state = State()

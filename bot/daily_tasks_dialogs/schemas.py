@@ -3,7 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
-class DailyTaskSchema(BaseModel):
+class DTUnsavedSchema(BaseModel):
     user_id: int
     name: str
     description: str | None
@@ -11,7 +11,7 @@ class DailyTaskSchema(BaseModel):
     end_dt: datetime
 
 
-class DTUnsavedSchema(BaseModel):
+class DTPreviewSchema(BaseModel):
     name: str
     description: str | None
     start_dt: datetime

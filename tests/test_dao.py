@@ -2,9 +2,10 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from db.dao import UserDao, DailyTaskDao
-from db.models import DTaskState
-from db.schemas import NotifySettingsSchema
+from daily_task.dao import DailyTaskDao
+from daily_task.models import DTaskState
+from user.dao import UserDao
+from user.models import NotifySettingsSchema
 
 
 class TestUserDao:

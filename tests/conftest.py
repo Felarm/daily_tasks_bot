@@ -3,9 +3,11 @@ from datetime import datetime, timedelta
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession, AsyncEngine
 
-from db.dao import UserDao, DailyTaskDao
+from daily_task.dao import DailyTaskDao
+from daily_task.models import DailyTask
+from user.dao import UserDao
 from db.database import Base
-from db.models import DailyTask
+
 
 TEST_DB_URL = "sqlite+aiosqlite:///:memory"
 

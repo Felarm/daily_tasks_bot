@@ -2,9 +2,10 @@ from datetime import timedelta
 
 from loguru import logger
 
-from db.dao import UserDao
-from db.models import DailyTask
-from db.schemas import NotifySettingsSchema
+from daily_task.models import DailyTask
+from user.dao import UserDao
+from user.models import NotifySettingsSchema
+
 from db.session import get_db_session
 from scheduler.base import jobs_scheduler
 from scheduler.jobs import send_user_msg_job, start_user_dialog_job, end_user_dialog_job
@@ -18,7 +19,8 @@ class DailyTaskSchedulerService:
 
     async def add_tracker_jobs(self):
         await self.notify_before_task_start()
-        await self.run_task_start_dialog()
+        self.run_task_start_dialog()
+        self.run_task_end_dialog()
 
     async def notify_before_task_start(self):
         async with get_db_session(False) as session:
@@ -42,7 +44,7 @@ class DailyTaskSchedulerService:
             )
             logger.debug(f"{task_user.username} should receive notification about task {self.daily_task.name} begining at {self.daily_task.start_dt - timedelta(minutes=5)}")
 
-    async def run_task_start_dialog(self):
+    def run_task_start_dialog(self):
         jobs_scheduler.add_job(
             func=start_user_dialog_job,
             trigger="date",
@@ -56,7 +58,7 @@ class DailyTaskSchedulerService:
         )
         logger.debug(f"scheduled begin dialog with {self.user_id} in chat {self.chat_id} about beginnin task {self.daily_task}")
 
-    async def run_task_end_dialog(self):
+    def run_task_end_dialog(self):
         jobs_scheduler.add_job(
             func=end_user_dialog_job,
             trigger="date",

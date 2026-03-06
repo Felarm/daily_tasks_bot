@@ -7,10 +7,10 @@ from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import Button, ManagedCalendar
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.daily_tasks_dialogs.schemas import DailyTaskSchema, DTBeginSchema
+from bot.daily_tasks_dialogs.schemas import DTUnsavedSchema, DTBeginSchema
 from bot.users.keyboards import main_user_kb, task_control_kb
-from db.dao import DailyTaskDao
-from db.models import DTaskState
+from daily_task.dao import DailyTaskDao
+from daily_task.models import DTaskState
 from scheduler.service import DailyTaskSchedulerService
 
 
@@ -99,9 +99,9 @@ async def process_time_period(msg: Message, msg_input: MessageInput, dialog_mgr:
 async def create_confirmation(callback: CallbackQuery, button: Button, dialog_manager: DialogManager, **_):
     session: AsyncSession = dialog_manager.middleware_data.get("session_with_commit")
     if button.widget_id == ConfirmationWidgetIds.create.value:
-        task_data = DailyTaskSchema(user_id=callback.from_user.id, **dialog_manager.dialog_data)
+        task_data = DTUnsavedSchema(user_id=callback.from_user.id, **dialog_manager.dialog_data)
     elif button.widget_id == ConfirmationWidgetIds.copy.value:
-        task_data = DailyTaskSchema(**dialog_manager.start_data["task_to_copy"])
+        task_data = DTUnsavedSchema(**dialog_manager.start_data["task_to_copy"])
         task_to_copy_duration = task_data.end_dt - task_data.start_dt
         new_start_dt: datetime = dialog_manager.dialog_data["start_dt"]
         new_end_dt = new_start_dt + task_to_copy_duration
