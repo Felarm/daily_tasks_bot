@@ -7,7 +7,7 @@ from daily_task.dao import DailyTaskDao
 from daily_task.models import DailyTask
 from user.dao import UserDao
 from db.database import Base
-
+from user.models import User
 
 TEST_DB_URL = "sqlite+aiosqlite:///:memory"
 
@@ -35,18 +35,15 @@ async def session(engine) -> AsyncSession:
 
 
 @pytest_asyncio.fixture(scope="function")
-async def daily_task_user_id(session) -> int:
-    test_user_id = await UserDao(session).new_user(
-        username="test_user",
-        id_=999,
-    )
-    return test_user_id
+async def daily_task_user(session) -> User:
+    test_user = await UserDao(session).new_user(username="test_user")
+    return test_user
 
 
 @pytest_asyncio.fixture(scope="function")
-async def present_daily_task(session, daily_task_user_id) -> DailyTask:
+async def present_daily_task(session, daily_task_user) -> DailyTask:
     return await DailyTaskDao(session).create_user_daily_task(
-        user_id=daily_task_user_id,
+        user_id=daily_task_user.id,
         name="conftest_daily_task",
         start_dt=datetime.now(),
         end_dt=datetime.now() + timedelta(seconds=5)

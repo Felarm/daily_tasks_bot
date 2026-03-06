@@ -15,39 +15,27 @@ class TestUserDao:
         argvalues=[
             {
                 "username": "test_user_99",
-                "id_": 99,
+                "tg_id": 99,
                 "first_name": "test_first_name",
                 "last_name": "test_last_name",
-                "language_code": "test_language_code",
             },
             {
                 "username": "test_user_67",
-                "id_": 67,
+                "tg_id": 67,
             },
         ]
     )
     async def test_new_user_success(self, session, new_user_kwargs):
-        new_user_id = await UserDao(session).new_user(**new_user_kwargs)
-        assert new_user_id in [67, 99]
-
-    @pytest.mark.asyncio
-    @pytest.mark.xfail
-    @pytest.mark.parametrize(
-        argnames="new_user_kwargs",
-        argvalues=[
-            {"username": 123, "id_": "id"},
-        ],
-    )
-    async def test_new_user_fail(self, session, new_user_kwargs):
-        await UserDao(session).new_user(**new_user_kwargs)
+        new_user = await UserDao(session).new_user(**new_user_kwargs)
+        assert new_user.tg_id in [67, 99]
 
     @pytest.mark.asyncio
     @pytest.mark.xfail
     @pytest.mark.parametrize(
         argnames="new_user_kwargs_1, new_user_kwargs_2",
         argvalues=[
-            ({"username": "user", "id_": 22}, {"username": "user", "id_": 23}),
-            ({"username": "user_1", "id_": 69}, {"username": "user_2", "id_": 69}),
+            ({"username": "user", "tg_id": 22}, {"username": "user", "tg_id": 23}),
+            ({"username": "user_1", "tg_id": 69}, {"username": "user_2", "tg_id": 69}),
         ]
     )
     async def test_new_user_unique_constraints(self, session, new_user_kwargs_1, new_user_kwargs_2):
@@ -58,14 +46,14 @@ class TestUserDao:
     @pytest.mark.parametrize(
         argnames="new_user_kwargs",
         argvalues=[
-            {"username": "user", "id_": 42}
+            {"username": "user"}
         ]
     )
     async def test_get_by_variants(self, session, new_user_kwargs):
-        new_user_id = await UserDao(session).new_user(**new_user_kwargs)
+        new_user = await UserDao(session).new_user(**new_user_kwargs)
         user_obj = await UserDao(session).get_one_or_none_by_id(69)
         assert user_obj is None
-        another_user_obj = await UserDao(session).get_one_or_none_by_id(new_user_id)
+        another_user_obj = await UserDao(session).get_one_or_none_by_id(new_user.id)
         assert another_user_obj is not None
         and_another_user_obj = await UserDao(session).get_by_username(another_user_obj.username)
         assert another_user_obj == and_another_user_obj
@@ -73,16 +61,15 @@ class TestUserDao:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("new_notify_settings", [{"enabled": False, "mins_before_dt_start": [1, 2, 3]}])
-    async def test_update_user_notify_settings(self, session, daily_task_user_id, new_notify_settings):
-        user_obj = await UserDao(session).get_one_or_none_by_id(daily_task_user_id)
-        before_settings = NotifySettingsSchema(**user_obj.notify_settings)
+    async def test_update_user_notify_settings(self, session, daily_task_user, new_notify_settings):
+        before_settings = NotifySettingsSchema(**daily_task_user.notify_settings)
         assert before_settings.enabled == True
         assert before_settings.mins_before_dt_start == [5]
         await UserDao(session).update_user_notify_settings(
-            daily_task_user_id,
+            daily_task_user,
             NotifySettingsSchema(**new_notify_settings),
         )
-        after_settings = NotifySettingsSchema(**user_obj.notify_settings)
+        after_settings = NotifySettingsSchema(**daily_task_user.notify_settings)
         assert after_settings.enabled == False
         assert after_settings.mins_before_dt_start == [1, 2, 3]
 
@@ -98,9 +85,9 @@ class TestDailyTaskDao:
             "end_dt": datetime.now() + timedelta(seconds=5),
         }]
     )
-    async def test_create_user_daily_task(self, session, daily_task_user_id, task_params):
+    async def test_create_user_daily_task(self, session, daily_task_user, task_params):
         result = await DailyTaskDao(session).create_user_daily_task(
-            user_id=daily_task_user_id,
+            user_id=daily_task_user.id,
             **task_params,
         )
         assert result is not None
@@ -116,12 +103,12 @@ class TestDailyTaskDao:
             "start_dt": datetime.now() + timedelta(seconds=5),
         }]
     )
-    async def test_daily_tasks_constraints(self, session, daily_task_user_id, task_params):
-        await DailyTaskDao(session).create_user_daily_task(user_id=daily_task_user_id, **task_params)
+    async def test_daily_tasks_constraints(self, session, daily_task_user, task_params):
+        await DailyTaskDao(session).create_user_daily_task(user_id=daily_task_user.id, **task_params)
 
     @pytest.mark.asyncio
-    async def test_get_user_daily_tasks_all(self, session, daily_task_user_id, present_daily_task):
-        users_tasks = await DailyTaskDao(session).get_user_daily_tasks(daily_task_user_id)
+    async def test_get_user_daily_tasks_all(self, session, daily_task_user, present_daily_task):
+        users_tasks = await DailyTaskDao(session).get_user_daily_tasks(daily_task_user.id)
         assert present_daily_task in users_tasks
 
     @pytest.mark.asyncio
@@ -134,20 +121,20 @@ class TestDailyTaskDao:
         }]
     )
     async def test_get_user_daily_tasks_by_date(
-            self, session, daily_task_user_id, present_daily_task, past_task_params
+            self, session, daily_task_user, present_daily_task, past_task_params
     ):
-        task_from_past = await DailyTaskDao(session).create_user_daily_task(daily_task_user_id, **past_task_params)
+        task_from_past = await DailyTaskDao(session).create_user_daily_task(daily_task_user.id, **past_task_params)
         tasks_from_past = await DailyTaskDao(session).get_user_daily_tasks(
-            user_id=daily_task_user_id,
+            user_id=daily_task_user.id,
             tasks_date=datetime.now() - timedelta(days=2)
         )
         assert present_daily_task not in tasks_from_past
         assert task_from_past in tasks_from_past
 
     @pytest.mark.asyncio
-    async def test_delete_daily_task(self, session, daily_task_user_id, present_daily_task):
+    async def test_delete_daily_task(self, session, daily_task_user, present_daily_task):
         await DailyTaskDao(session).delete_daily_task(task_id=present_daily_task.id)
-        present_tasks = await DailyTaskDao(session).get_user_daily_tasks(daily_task_user_id)
+        present_tasks = await DailyTaskDao(session).get_user_daily_tasks(daily_task_user.id)
         assert present_tasks == []
 
     @pytest.mark.asyncio

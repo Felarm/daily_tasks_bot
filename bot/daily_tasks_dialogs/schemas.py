@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 class DTUnsavedSchema(BaseModel):
-    user_id: int
+    tg_user_id: int
     name: str
     description: str | None
     start_dt: datetime

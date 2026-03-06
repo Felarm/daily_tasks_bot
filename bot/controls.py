@@ -6,20 +6,13 @@ from bot.daily_tasks_dialogs.dialog import task_creation_dialog_router, task_cop
     task_begin_dialog_router
 from bot.users.router import user_router
 from config import settings
-from bot.database_middleware import DBMiddlewareWithoutCommit, DBMiddlewareWithCommit
 
 
-async def set_commands():
+async def start_bot():
     commands = [
         BotCommand(command="start", description="start")
     ]
     await bot.set_my_commands(commands, BotCommandScopeDefault())
-
-
-async def start_bot():
-    dp.update.middleware.register(DBMiddlewareWithoutCommit())
-    dp.update.middleware.register(DBMiddlewareWithCommit())
-    await set_commands()
     dp.include_router(user_router)
     dp.include_router(task_creation_dialog_router)
     dp.include_router(task_copy_dialog_router)

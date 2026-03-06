@@ -5,12 +5,10 @@ from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import Button, ManagedCalendar
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.daily_tasks_dialogs.schemas import DTUnsavedSchema, DTBeginSchema
 from bot.users.keyboards import main_user_kb, task_control_kb
-from daily_task.dao import DailyTaskDao
-from daily_task.models import DTaskState
+from daily_task.service import DailyTaskService
 from scheduler.service import DailyTaskSchedulerService
 
 
@@ -97,11 +95,10 @@ async def process_time_period(msg: Message, msg_input: MessageInput, dialog_mgr:
 
 
 async def create_confirmation(callback: CallbackQuery, button: Button, dialog_manager: DialogManager, **_):
-    session: AsyncSession = dialog_manager.middleware_data.get("session_with_commit")
     if button.widget_id == ConfirmationWidgetIds.create.value:
-        task_data = DTUnsavedSchema(user_id=callback.from_user.id, **dialog_manager.dialog_data)
+        task_data = DTUnsavedSchema(tg_user_id=callback.from_user.id, **dialog_manager.dialog_data)
     elif button.widget_id == ConfirmationWidgetIds.copy.value:
-        task_data = DTUnsavedSchema(**dialog_manager.start_data["task_to_copy"])
+        task_data = DTUnsavedSchema(tg_user_id=callback.from_user.id, **dialog_manager.start_data["task_to_copy"])
         task_to_copy_duration = task_data.end_dt - task_data.start_dt
         new_start_dt: datetime = dialog_manager.dialog_data["start_dt"]
         new_end_dt = new_start_dt + task_to_copy_duration
@@ -109,7 +106,7 @@ async def create_confirmation(callback: CallbackQuery, button: Button, dialog_ma
         task_data.end_dt = new_end_dt
     else:
         raise ValueError("unknow id of confirmation widget")
-    new_task = await DailyTaskDao(session).create_user_daily_task(**task_data.model_dump())
+    new_task = await DailyTaskService.new_user_task_from_tg(**task_data.model_dump())
     await callback.message.answer(
         text="yay! we created another task, now you can try to find it in your tasks list",
         reply_markup=main_user_kb(),
@@ -123,27 +120,24 @@ async def create_confirmation(callback: CallbackQuery, button: Button, dialog_ma
 
 
 async def begin_approval(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
-    session = dialog_manager.middleware_data.get("session_with_commit")
     task_data = DTBeginSchema(**dialog_manager.start_data["task_data"])
     now = datetime.now()
     if now > task_data.end_dt:
         # task is failed cause missed time to check in
-        await DailyTaskDao(session).change_daily_task_state(task_data.id, DTaskState.failed)
+        await DailyTaskService.fail_task(task_data.id)
         await callback.message.answer(
             text="bruh, task already ended, its fail to begin it. Copy it to some other datetime to begin again or just delete",
             reply_markup=task_control_kb(task_data.id),
         )
     else:
-        await DailyTaskDao(session).change_daily_task_state(task_data.id, DTaskState.in_progres)
-        await DailyTaskDao(session).set_daily_task_real_start_dt(task_data.id, now)
+        await DailyTaskService.begin_task(task_data.id, now)
         await callback.message.answer("ok, lets rooolll")
     await dialog_manager.done()
 
 
 async def begin_disapproval(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
-    session = dialog_manager.middleware_data.get("session_with_commit")
     task_data = DTBeginSchema(**dialog_manager.start_data["task_data"])
-    await DailyTaskDao(session).change_daily_task_state(task_data.id, DTaskState.failed)
+    await DailyTaskService.fail_task(task_data.id)
     await callback.message.answer(
         text="we'll mark this task as failed. Copy it to some other datetime or delete if you want",
         reply_markup=task_control_kb(task_data.id),
@@ -152,18 +146,15 @@ async def begin_disapproval(callback: CallbackQuery, button: Button, dialog_mana
 
 
 async def end_approval(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
-    session = dialog_manager.middleware_data.get("session_with_commit")
     task_data = DTBeginSchema(**dialog_manager.start_data["task_data"])
-    await DailyTaskDao(session).change_daily_task_state(task_data.id, DTaskState.done)
-    await DailyTaskDao(session).set_daily_task_real_end_dt(task_data.id, datetime.now())
+    await DailyTaskService.end_task(task_data.id, datetime.now())
     await callback.message.answer("yay! u did it!")
     await dialog_manager.done()
 
 
 async def end_disapproval(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
-    session = dialog_manager.middleware_data.get("session_with_commit")
     task_data = DTBeginSchema(**dialog_manager.start_data["task_data"])
-    await DailyTaskDao(session).change_daily_task_state(task_data.id, DTaskState.failed)
+    await DailyTaskService.fail_task(task_data.id)
     await callback.message.answer(
         text="bruh, its failed, may be copy to other time?",
         reply_markup=task_control_kb(task_data.id),

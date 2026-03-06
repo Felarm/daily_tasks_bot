@@ -12,23 +12,21 @@ class UserDao(BaseDao[User]):
     async def new_user(
             self,
             username: str,
-            id_: int,
+            tg_id: int | None = None,
             first_name: str | None = None,
             last_name: str | None = None,
-            language_code: str | None = None,
-    ) -> int | None:
+    ) -> User | None:
         user_query = insert(self.model).values(
             username=username,
-            id=id_,
+            tg_id=tg_id,
             first_name=first_name,
             last_name=last_name,
-            language_code=language_code,
-        ).returning(self.model.id)
+        ).returning(self.model)
         try:
             result = await self._session.execute(user_query)
-            new_user_id = result.scalar_one_or_none()
-            logger.debug(f"registered user with id: {new_user_id}")
-            return new_user_id
+            new_user = result.scalar_one_or_none()
+            logger.debug(f"registered user with id: {new_user.id}")
+            return new_user
         except SQLAlchemyError as e:
             logger.error(f"Error occurred during registering new user with {username=}:\n{e}")
 
@@ -40,11 +38,18 @@ class UserDao(BaseDao[User]):
         except SQLAlchemyError as e:
             logger.error(f"Error occurred while attempting to get user by its {username=}:\n{e}")
 
-    async def update_user_notify_settings(self, user_id: int, new_values: NotifySettingsSchema):
-        user = await self.get_one_or_none_by_id(user_id)
+    async def get_by_tg_id(self, tg_id: int) -> User | None:
+        query = select(self.model).filter_by(tg_id=tg_id)
+        try:
+            result = await self._session.execute(query)
+            return result.scalar_one_or_none()
+        except SQLAlchemyError as e:
+            logger.error(f"Error occurred whilt attempting to find user with {tg_id=}:\n{e}")
+
+    async def update_user_notify_settings(self, user: User, new_values: NotifySettingsSchema):
         user.notify_settings = new_values.model_dump()
         try:
             await self._session.commit()
         except SQLAlchemyError as e:
-            logger.error(f"Error occurred while attempting to update notify_settings of user with {user_id=}\n{e}")
+            logger.error(f"Error occurred while attempting to update notify_settings of user {user.username}\n{e}")
 
