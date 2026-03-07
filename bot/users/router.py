@@ -48,7 +48,6 @@ async def get_today_tasks(callback: CallbackQuery):
 
 @user_router.callback_query(F.data == "new_daily_task")
 async def new_daily_task(callback: CallbackQuery, dialog_manager: DialogManager):
-    await callback.answer("yay, new task")
     await dialog_manager.start(state=DailyTaskCreationStates.name, mode=StartMode.RESET_STACK)
 
 
@@ -56,11 +55,11 @@ async def new_daily_task(callback: CallbackQuery, dialog_manager: DialogManager)
 async def delete_task(callback: CallbackQuery, callback_data: TaskAction):
     task_id = callback_data.task_id
     await DailyTaskService.delete_task(task_id=task_id)
-    await callback.answer(f"deleted task with {task_id=}")
+    await callback.message.answer(f"deleted task with {task_id=}")
 
 
-@user_router.callback_query(TaskAction.filter(F.action == "copy_to_date"))
-async def copy_task_to_date(callback_data: TaskAction, dialog_manager: DialogManager):
+@user_router.callback_query(TaskAction.filter(F.action == "copy"))
+async def copy_task_to_date(callback: CallbackQuery, callback_data: TaskAction, dialog_manager: DialogManager):
     task = await DailyTaskService.get_task(callback_data.task_id)
     await dialog_manager.start(
         state=DailyTaskCopyStates.new_task_start_date,

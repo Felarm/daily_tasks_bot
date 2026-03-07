@@ -35,4 +35,4 @@ async def webhook(request: Request):
         await dp.feed_update(bot, update)
         logger.debug("updated processed")
     except Exception as e:
-        logger.error(f"error while processing update on webhook:\n{e}\n{e.with_traceback(e.__traceback__)}")
+        logger.exception(f"error while processing update on webhook:\n{e}")

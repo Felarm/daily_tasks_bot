@@ -1,9 +1,10 @@
 from aiogram_dialog import Dialog
 
 from bot.daily_tasks_dialogs.getters import get_confirmed_new_task_info, get_confirmed_copy_task_info
-from bot.daily_tasks_dialogs.handlers import DateTimeWidgetIds, ConfirmationWidgetIds
-from bot.daily_tasks_dialogs.states import DailyTaskCreationStates, DailyTaskCopyStates
-from bot.daily_tasks_dialogs.windows import DailyTaskCreationWindows, TaskBeginWindows
+from bot.daily_tasks_dialogs.handlers import DateTimeWidgetIds, ConfirmationWidgetIds, ApproveWidgetsIds
+from bot.daily_tasks_dialogs.states import DailyTaskCreationStates, DailyTaskCopyStates, DailyTaskProgressStates
+from bot.daily_tasks_dialogs.windows import DailyTaskCreationWindows, TaskProgressWindows
+
 
 task_creation_dialog_router = Dialog(
     DailyTaskCreationWindows.get_name_input_window(),
@@ -55,7 +56,17 @@ task_copy_dialog_router = Dialog(
 )
 
 
-task_begin_dialog_router = Dialog(
-    TaskBeginWindows.get_task_begin_window(),
-    TaskBeginWindows.get_task_end_window(),
+task_progress_dialog_router = Dialog(
+    TaskProgressWindows.get_task_progress_window(
+        header="did u begin task?",
+        approve_id=ApproveWidgetsIds.begin_approve.value,
+        disapprove_id=ApproveWidgetsIds.begin_disapprove.value,
+        state=DailyTaskProgressStates.begin_state,
+    ),
+    TaskProgressWindows.get_task_progress_window(
+        header="did u end task?",
+        approve_id=ApproveWidgetsIds.end_approve.value,
+        disapprove_id=ApproveWidgetsIds.end_disapprove.value,
+        state=DailyTaskProgressStates.end_state,
+    ),
 )

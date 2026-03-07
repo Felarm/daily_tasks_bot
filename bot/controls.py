@@ -3,7 +3,7 @@ from loguru import logger
 
 from bot.base import bot, dp
 from bot.daily_tasks_dialogs.dialog import task_creation_dialog_router, task_copy_dialog_router, \
-    task_begin_dialog_router
+    task_progress_dialog_router
 from bot.users.router import user_router
 from config import settings
 
@@ -16,7 +16,7 @@ async def start_bot():
     dp.include_router(user_router)
     dp.include_router(task_creation_dialog_router)
     dp.include_router(task_copy_dialog_router)
-    dp.include_router(task_begin_dialog_router)
+    dp.include_router(task_progress_dialog_router)
     await bot.set_webhook(
         url=settings.hook_url,
         allowed_updates=dp.resolve_used_update_types(),

@@ -4,6 +4,7 @@ from typing import Sequence
 from daily_task.dao import DailyTaskDao
 from daily_task.models import DailyTask, DTaskState
 from db.session import get_db_session
+from scheduler.service import DTNotifySchedulerService
 from user.service import UserService
 
 
@@ -31,9 +32,11 @@ class DailyTaskService:
     ) -> DailyTask | None:
         user = await UserService.get_user_by_tg_id(tg_user_id)
         async with get_db_session() as session:
-            return await DailyTaskDao(session).create_user_daily_task(
-                user.id, name, start_dt, end_dt, description
-            )
+            new_task = await DailyTaskDao(session).create_user_daily_task(user.id, name, start_dt, end_dt, description)
+            if not new_task:
+                return None
+            DTNotifySchedulerService(new_task, user).add_tracker_jobs()
+            return new_task
 
     @staticmethod
     async def get_today_tasks_from_tg(tg_user_id: int) -> Sequence[DailyTask] | None:
@@ -50,7 +53,7 @@ class DailyTaskService:
     @staticmethod
     async def get_task(task_id: int) -> DailyTask | None:
         async with get_db_session(with_commit=False) as session:
-            await DailyTaskDao(session).get_one_or_none_by_id(task_id)
+            return await DailyTaskDao(session).get_one_or_none_by_id(task_id)
 
     @staticmethod
     async def begin_task(task_id: int, start_dt: datetime) -> None:
@@ -67,6 +70,7 @@ class DailyTaskService:
 
     @staticmethod
     async def end_task(task_id: int, end_dt: datetime) -> None:
+        """set task to done state and adds real_end_dt"""
         async with get_db_session() as session:
             await DailyTaskDao(session).change_daily_task_state(task_id, DTaskState.done)
             await DailyTaskDao(session).set_daily_task_real_end_dt(task_id, end_dt)

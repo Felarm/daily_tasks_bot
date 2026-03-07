@@ -18,7 +18,7 @@ class DTPreviewSchema(BaseModel):
     end_dt: datetime
 
 
-class DTBeginSchema(BaseModel):
+class DTProgressSchema(BaseModel):
     id: int
     start_dt: datetime
     end_dt: datetime

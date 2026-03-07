@@ -8,8 +8,8 @@ from aiogram_dialog.widgets.kbd import Cancel, Back, Calendar, CalendarConfig, B
 from aiogram_dialog.widgets.text import Const, Format
 
 from bot.daily_tasks_dialogs.handlers import cancel_creation, process_name, process_description, create_confirmation, \
-    begin_approval, begin_disapproval, end_approval, end_disapproval, process_time_period, process_date_period
-from bot.daily_tasks_dialogs.states import DailyTaskCreationStates, DailyTaskProgressStates
+    approve_progress, disapprove_progress, process_time_period, process_date_period
+from bot.daily_tasks_dialogs.states import DailyTaskCreationStates
 
 
 class DailyTaskCreationWindows:
@@ -71,21 +71,12 @@ class DailyTaskCreationWindows:
         )
 
 
-class TaskBeginWindows:
+class TaskProgressWindows:
     @staticmethod
-    def get_task_begin_window() -> Window:
+    def get_task_progress_window(header: str, approve_id: str, disapprove_id: str, state: State) -> Window:
         return Window(
-            Const("uhh, bruh, did u begin task?"),
-            Button(Const("yup"), id="approve", on_click=begin_approval),
-            Button(Const("nah, i missed somewhere in timeline"), id="disapprove", on_click=begin_disapproval),
-            state=DailyTaskProgressStates.begin_state,
-        )
-
-    @staticmethod
-    def get_task_end_window() -> Window:
-        return Window(
-            Const("bruh, did u end task?"),
-            Button(Const("yup"), id="approve", on_click=end_approval),
-            Button(Const("nope"), id="disapprove", on_click=end_disapproval),
-            state=DailyTaskProgressStates.end_state,
+            Const(header),
+            Button(Const("yup"), id=approve_id, on_click=approve_progress),
+            Button(Const("nope"), id=disapprove_id, on_click=disapprove_progress),
+            state=state,
         )

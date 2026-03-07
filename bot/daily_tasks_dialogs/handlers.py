@@ -6,10 +6,9 @@ from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import Button, ManagedCalendar
 
-from bot.daily_tasks_dialogs.schemas import DTUnsavedSchema, DTBeginSchema
+from bot.daily_tasks_dialogs.schemas import DTUnsavedSchema, DTProgressSchema
 from bot.users.keyboards import main_user_kb, task_control_kb
 from daily_task.service import DailyTaskService
-from scheduler.service import DailyTaskSchedulerService
 
 
 class DateTimeWidgetIds(enum.Enum):
@@ -21,6 +20,13 @@ class ConfirmationWidgetIds(enum.Enum):
     create = "create"
     copy = "copy"
     delete = "delete"
+
+
+class ApproveWidgetsIds(enum.Enum):
+    begin_approve = "begin_approve"
+    begin_disapprove = "begin_disapprove"
+    end_approve = "end_approve"
+    end_disapprove = "end_disapprove"
 
 
 async def cancel_creation(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
@@ -106,57 +112,30 @@ async def create_confirmation(callback: CallbackQuery, button: Button, dialog_ma
         task_data.end_dt = new_end_dt
     else:
         raise ValueError("unknow id of confirmation widget")
-    new_task = await DailyTaskService.new_user_task_from_tg(**task_data.model_dump())
+    await DailyTaskService.new_user_task_from_tg(**task_data.model_dump())
     await callback.message.answer(
         text="yay! we created another task, now you can try to find it in your tasks list",
         reply_markup=main_user_kb(),
     )
-    await DailyTaskSchedulerService(
-        new_task,
-        callback.from_user.id,
-        callback.message.chat.id,
-    ).add_tracker_jobs()
     await dialog_manager.done()
 
 
-async def begin_approval(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
-    task_data = DTBeginSchema(**dialog_manager.start_data["task_data"])
-    now = datetime.now()
-    if now > task_data.end_dt:
-        # task is failed cause missed time to check in
-        await DailyTaskService.fail_task(task_data.id)
-        await callback.message.answer(
-            text="bruh, task already ended, its fail to begin it. Copy it to some other datetime to begin again or just delete",
-            reply_markup=task_control_kb(task_data.id),
-        )
-    else:
-        await DailyTaskService.begin_task(task_data.id, now)
+async def approve_progress(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
+    task_data = DTProgressSchema(**dialog_manager.start_data["task_data"])
+    if button.widget_id == ApproveWidgetsIds.begin_approve:
+        await DailyTaskService.begin_task(task_data.id, datetime.now())
         await callback.message.answer("ok, lets rooolll")
+    elif button.widget_id == ApproveWidgetsIds.end_approve:
+        await DailyTaskService.end_task(task_data.id, datetime.now())
+        await callback.message.answer("yay, u did it")
     await dialog_manager.done()
 
 
-async def begin_disapproval(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
-    task_data = DTBeginSchema(**dialog_manager.start_data["task_data"])
+async def disapprove_progress(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
+    task_data = DTProgressSchema(**dialog_manager.start_data["task_data"])
     await DailyTaskService.fail_task(task_data.id)
     await callback.message.answer(
-        text="we'll mark this task as failed. Copy it to some other datetime or delete if you want",
-        reply_markup=task_control_kb(task_data.id),
-    )
-    await dialog_manager.done()
-
-
-async def end_approval(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
-    task_data = DTBeginSchema(**dialog_manager.start_data["task_data"])
-    await DailyTaskService.end_task(task_data.id, datetime.now())
-    await callback.message.answer("yay! u did it!")
-    await dialog_manager.done()
-
-
-async def end_disapproval(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
-    task_data = DTBeginSchema(**dialog_manager.start_data["task_data"])
-    await DailyTaskService.fail_task(task_data.id)
-    await callback.message.answer(
-        text="bruh, its failed, may be copy to other time?",
+        text="we'll mark this task as failed.\nCopy it to some other datetime or delete if you want",
         reply_markup=task_control_kb(task_data.id),
     )
     await dialog_manager.done()

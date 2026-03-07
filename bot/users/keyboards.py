@@ -18,7 +18,7 @@ def main_user_kb() -> InlineKeyboardMarkup:
 
 def task_control_kb(task_id: int) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
-    kb.button(text="Copy task", callback_data=TaskAction(action="copy_to_date", task_id=task_id))
+    kb.button(text="Copy task", callback_data=TaskAction(action="copy", task_id=task_id))
     kb.button(text="Delete task", callback_data=TaskAction(action="delete", task_id=task_id))
     kb.adjust(1)
     return kb.as_markup()
