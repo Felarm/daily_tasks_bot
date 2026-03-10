@@ -12,7 +12,7 @@ async def start_user_dialog_job(user_id: int, chat_id: int, task_data: dict):
     dialog_mgr = bg_factory.bg(bot, user_id, chat_id)
     await dialog_mgr.start(
         state=DailyTaskProgressStates.begin_state,
-        mode=StartMode.RESET_STACK,
+        mode=StartMode.NORMAL,
         data={"task_data": task_data},
     )
 
@@ -21,6 +21,6 @@ async def end_user_dialog_job(user_id: int, chat_id: int, task_data: dict):
     dialog_mgr = bg_factory.bg(bot, user_id, chat_id)
     await dialog_mgr.start(
         state=DailyTaskProgressStates.end_state,
-        mode=StartMode.RESET_STACK,
+        mode=StartMode.NORMAL,
         data={"task_data": task_data}
     )

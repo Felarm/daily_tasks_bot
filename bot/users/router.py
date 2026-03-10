@@ -9,6 +9,7 @@ from bot.daily_tasks_dialogs.states import DailyTaskCreationStates, DailyTaskCop
 from bot.users.keyboards import main_user_kb, task_control_kb, TaskAction
 from bot.users.schemas import NewUserSchema
 from daily_task.service import DailyTaskService
+from scheduler.service import DTNotifySchedulerService
 from user.service import UserService
 
 user_router = Router()
@@ -55,7 +56,8 @@ async def new_daily_task(callback: CallbackQuery, dialog_manager: DialogManager)
 async def delete_task(callback: CallbackQuery, callback_data: TaskAction):
     task_id = callback_data.task_id
     await DailyTaskService.delete_task(task_id=task_id)
-    await callback.message.answer(f"deleted task with {task_id=}")
+    await callback.message.answer(f"deleted task with {task_id=}", reply_markup=main_user_kb())
+    DTNotifySchedulerService.delete_dt_jobs(task_id)
 
 
 @user_router.callback_query(TaskAction.filter(F.action == "copy"))

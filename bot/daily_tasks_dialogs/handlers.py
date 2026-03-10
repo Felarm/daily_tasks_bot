@@ -122,10 +122,10 @@ async def create_confirmation(callback: CallbackQuery, button: Button, dialog_ma
 
 async def approve_progress(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
     task_data = DTProgressSchema(**dialog_manager.start_data["task_data"])
-    if button.widget_id == ApproveWidgetsIds.begin_approve:
+    if button.widget_id == ApproveWidgetsIds.begin_approve.value:
         await DailyTaskService.begin_task(task_data.id, datetime.now())
         await callback.message.answer("ok, lets rooolll")
-    elif button.widget_id == ApproveWidgetsIds.end_approve:
+    elif button.widget_id == ApproveWidgetsIds.end_approve.value:
         await DailyTaskService.end_task(task_data.id, datetime.now())
         await callback.message.answer("yay, u did it")
     await dialog_manager.done()

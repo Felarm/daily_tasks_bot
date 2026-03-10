@@ -29,6 +29,7 @@ class UserDao(BaseDao[User]):
             return new_user
         except SQLAlchemyError as e:
             logger.error(f"Error occurred during registering new user with {username=}:\n{e}")
+            raise
 
     async def get_by_username(self, username: str) -> User | None:
         query = select(self.model).filter_by(username=username)
@@ -37,6 +38,7 @@ class UserDao(BaseDao[User]):
             return result.scalar_one_or_none()
         except SQLAlchemyError as e:
             logger.error(f"Error occurred while attempting to get user by its {username=}:\n{e}")
+            raise
 
     async def get_by_tg_id(self, tg_id: int) -> User | None:
         query = select(self.model).filter_by(tg_id=tg_id)
@@ -44,7 +46,8 @@ class UserDao(BaseDao[User]):
             result = await self._session.execute(query)
             return result.scalar_one_or_none()
         except SQLAlchemyError as e:
-            logger.error(f"Error occurred whilt attempting to find user with {tg_id=}:\n{e}")
+            logger.error(f"Error occurred while attempting to find user with {tg_id=}:\n{e}")
+            raise
 
     async def update_user_notify_settings(self, user: User, new_values: NotifySettingsSchema):
         user.notify_settings = new_values.model_dump()
@@ -52,4 +55,4 @@ class UserDao(BaseDao[User]):
             await self._session.commit()
         except SQLAlchemyError as e:
             logger.error(f"Error occurred while attempting to update notify_settings of user {user.username}\n{e}")
-
+            raise

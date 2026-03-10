@@ -32,13 +32,14 @@ class DTNotifySchedulerService:
                 next_run_time=notify_time,
                 replace_existing=True,
                 kwargs={"user_id": self.user.tg_id, "text": notify_text},
+                id=f"{self.daily_task.id}:notify",
             )
             logger.debug(f"{self.user.username} should receive notification about task {self.daily_task.name} begining at {self.daily_task.start_dt - timedelta(minutes=5)}")
 
     def run_start_end_dialogs(self):
-        tasks_and_periods = [(start_user_dialog_job, self.daily_task.start_dt),
-                             (end_user_dialog_job, self.daily_task.end_dt)]
-        for task, run_time in tasks_and_periods:
+        tasks_and_periods = [(start_user_dialog_job, self.daily_task.start_dt, "start_dialog"),
+                             (end_user_dialog_job, self.daily_task.end_dt, "end_dialog")]
+        for task, run_time, event_type in tasks_and_periods:
             jobs_scheduler.add_job(
                 func=task,
                 trigger="date",
@@ -48,5 +49,15 @@ class DTNotifySchedulerService:
                     "user_id": self.user.tg_id,
                     "chat_id": self.user.tg_id,
                     "task_data": self.daily_task.to_dict(exclude_none=True),
-                }
+                },
+                id=f"{self.daily_task.id}:{event_type}",
             )
+
+    @staticmethod
+    def delete_dt_jobs(daily_task_id: int) -> None:
+        for event_type in ["notify", "start_dialog", "end_dialog"]:
+            job_id = f"{daily_task_id}:{event_type}"
+            existing_job = jobs_scheduler.get_job(job_id)
+            if existing_job:
+                jobs_scheduler.remove_job(job_id)
+                logger.debug(f"deleted job {job_id}")

@@ -32,6 +32,7 @@ class DailyTaskDao(BaseDao[DailyTask]):
             return result.scalar_one_or_none()
         except SQLAlchemyError as e:
             logger.error(f"Error occurred while creating task for user {user_id=}:\n{e}")
+            raise
 
     async def get_user_daily_tasks(self, user_id: int, tasks_date: date | None = None) -> Sequence[DailyTask] | None:
         query = select(self.model).filter_by(user_id=user_id)
@@ -46,6 +47,7 @@ class DailyTaskDao(BaseDao[DailyTask]):
             return result.scalars().all()
         except SQLAlchemyError as e:
             logger.error(f"Error occurred while getting user tasks for {user_id=}:\n{e}")
+            raise
 
     async def delete_daily_task(self, task_id: int) -> None:
         query = delete(self.model).where(self.model.id == task_id)
@@ -53,6 +55,7 @@ class DailyTaskDao(BaseDao[DailyTask]):
             await self._session.execute(query)
         except SQLAlchemyError as e:
             logger.error(f"Error occurred while deleting task with {task_id=}:\n{e}")
+            raise
 
     async def change_daily_task_state(self, task_id: int, new_state: DTaskState) -> None:
         query = update(self.model).where(self.model.id == task_id).values(state=new_state.value)
@@ -60,6 +63,7 @@ class DailyTaskDao(BaseDao[DailyTask]):
             await self._session.execute(query)
         except SQLAlchemyError as e:
             logger.error(f"Error occurred while changing task with {task_id=} state to {new_state.value}:\n{e}")
+            raise
 
     async def set_daily_task_real_start_dt(self, task_id: int, real_start_dt: datetime):
         query = update(self.model).where(self.model.id == task_id).values(real_start_dt=real_start_dt)
@@ -67,6 +71,7 @@ class DailyTaskDao(BaseDao[DailyTask]):
             await self._session.execute(query)
         except SQLAlchemyError as e:
             logger.error(f"Error occurred while setting real_start_dt of task with {task_id=} to {real_start_dt}:\n{e}")
+            raise
 
     async def set_daily_task_real_end_dt(self, task_id: int, real_end_dt: datetime):
         query = update(self.model).where(self.model.id == task_id).values(real_end_dt=real_end_dt)
@@ -74,3 +79,4 @@ class DailyTaskDao(BaseDao[DailyTask]):
             await self._session.execute(query)
         except SQLAlchemyError as e:
             logger.error(f"Error occurred while setting real_end_dt of task with {task_id=} to {real_end_dt}:\n{e}")
+            raise
