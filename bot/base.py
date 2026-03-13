@@ -19,7 +19,10 @@ bg_factory = setup_dialogs(dp)
 async def simple_error_handler(event: ErrorEvent, dialog_manager: DialogManager) -> None:
     error_msg = f"something went wrong"
     if event.update.message:
-        await event.update.message.answer(error_msg)
+        if event.update.message.from_user.id in settings.TG_ADMIN_IDS:
+            await event.update.message.answer(str(event.exception))
+        else:
+            await event.update.message.answer(error_msg)
     elif event.update.callback_query:
         await event.update.callback_query.message.answer(error_msg)
     await dialog_manager.reset_stack()

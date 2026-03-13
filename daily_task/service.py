@@ -4,7 +4,7 @@ from typing import Sequence
 from daily_task.dao import DailyTaskDao
 from daily_task.models import DailyTask, DTaskState
 from db.session import get_db_session
-from scheduler.service import DTNotifySchedulerService
+from notifier.service import NotifySchedulerService
 from user.service import UserService
 
 
@@ -35,7 +35,7 @@ class DailyTaskService:
             new_task = await DailyTaskDao(session).create_user_daily_task(user.id, name, start_dt, end_dt, description)
             if not new_task:
                 return None
-            DTNotifySchedulerService(new_task, user).add_tracker_jobs()
+            await NotifySchedulerService(new_task, user).add_notifier_jobs()
             return new_task
 
     @staticmethod

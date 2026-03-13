@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator
 
+from loguru import logger
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
 from config import settings
@@ -19,6 +20,7 @@ async def get_db_session(with_commit=True) -> AsyncGenerator[AsyncSession | Any,
                 await session.commit()
         except Exception as e:
             await session.rollback()
+            logger.exception(e)
             raise e
         finally:
             await session.close()

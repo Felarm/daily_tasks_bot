@@ -5,7 +5,6 @@ import pytest
 from daily_task.dao import DailyTaskDao
 from daily_task.models import DTaskState
 from user.dao import UserDao
-from user.models import NotifySettingsSchema
 
 
 class TestUserDao:
@@ -58,20 +57,6 @@ class TestUserDao:
         and_another_user_obj = await UserDao(session).get_by_username(another_user_obj.username)
         assert another_user_obj == and_another_user_obj
         assert another_user_obj is and_another_user_obj
-
-    @pytest.mark.asyncio
-    @pytest.mark.parametrize("new_notify_settings", [{"enabled": False, "mins_before_dt_start": [1, 2, 3]}])
-    async def test_update_user_notify_settings(self, session, daily_task_user, new_notify_settings):
-        before_settings = NotifySettingsSchema(**daily_task_user.notify_settings)
-        assert before_settings.enabled == True
-        assert before_settings.mins_before_dt_start == [5]
-        await UserDao(session).update_user_notify_settings(
-            daily_task_user,
-            NotifySettingsSchema(**new_notify_settings),
-        )
-        after_settings = NotifySettingsSchema(**daily_task_user.notify_settings)
-        assert after_settings.enabled == False
-        assert after_settings.mins_before_dt_start == [1, 2, 3]
 
 
 class TestDailyTaskDao:

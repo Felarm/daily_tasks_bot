@@ -1,28 +1,44 @@
-from datetime import timedelta
+from datetime import timedelta, time
 
 from loguru import logger
 
 from daily_task.models import DailyTask
-from user.models import NotifySettingsSchema, User
+from db.session import get_db_session
+from notifier.dao import UserNotifierSettingsDao
+from notifier.models import UserNotifierSettings
+from notifier.schemas import UpdatedSettings
+from user.models import User
 
-from scheduler.base import jobs_scheduler
-from scheduler.jobs import send_user_msg_job, start_user_dialog_job, end_user_dialog_job
+from notifier.base import jobs_scheduler
+from notifier.jobs import send_user_msg_job, start_user_dialog_job, end_user_dialog_job
 
 
-class DTNotifySchedulerService:
+class UserNotifierSettingsService:
+    @staticmethod
+    async def get_user_settings(user_id: int) -> UserNotifierSettings | None:
+        async with get_db_session(False) as session:
+            return await UserNotifierSettingsDao(session).get_user_settings(user_id)
+
+    @staticmethod
+    async def update_user_settings(user_id: int, new_values: UpdatedSettings) -> UserNotifierSettings | None:
+        async with get_db_session() as session:
+            return await UserNotifierSettingsDao(session).update_user_settings(user_id, new_values.model_dump())
+
+
+class NotifySchedulerService:
     def __init__(self, daily_task: DailyTask, user: User):
         self.daily_task = daily_task
         self.user = user
 
-    def add_tracker_jobs(self):
-        self.notify_before_task_start()
+    async def add_notifier_jobs(self) -> None:
+        user_settings = await UserNotifierSettingsService.get_user_settings(self.user.id)
+        if not user_settings.enable_all_notifications:
+            logger.warning(f"User {self.user.username} disabled all notifications")
+        self.notify_before_task_start(user_settings)
         self.run_start_end_dialogs()
 
-    def notify_before_task_start(self):
-        user_settings = NotifySettingsSchema(**self.user.notify_settings)
-        if not user_settings.enabled:
-            logger.warning(f"user {self.user.username} disabled notifications")
-        for mins in user_settings.mins_before_dt_start:
+    def notify_before_task_start(self, notify_settings: UserNotifierSettings) -> None:
+        for mins in notify_settings.mins_before_dt_start:
             notify_text = (f"hello {self.user.username}\n"
                            f"task {self.daily_task.name} will start starts in {mins} minutes")
             notify_time = self.daily_task.start_dt - timedelta(minutes=mins)
@@ -36,7 +52,10 @@ class DTNotifySchedulerService:
             )
             logger.debug(f"{self.user.username} should receive notification about task {self.daily_task.name} begining at {self.daily_task.start_dt - timedelta(minutes=5)}")
 
-    def run_start_end_dialogs(self):
+    def run_start_end_dialogs(self, notify_settings: UserNotifierSettings):
+        if not notify_settings.progress_dt_notifications_enabled:
+            logger.warning(f"user {self.user.username} disabled progress dialogs")
+            return
         tasks_and_periods = [(start_user_dialog_job, self.daily_task.start_dt, "start_dialog"),
                              (end_user_dialog_job, self.daily_task.end_dt, "end_dialog")]
         for task, run_time, event_type in tasks_and_periods:

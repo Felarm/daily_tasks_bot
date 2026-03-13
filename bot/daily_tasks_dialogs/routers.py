@@ -1,37 +1,17 @@
 from aiogram import Router, F
-from aiogram.filters import CommandStart
-from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import CallbackQuery
 from aiogram_dialog import DialogManager, StartMode
-from loguru import logger
 
+from bot.daily_tasks_dialogs.keyboards import task_control_kb, TaskAction
 from bot.daily_tasks_dialogs.states import DailyTaskCreationStates, DailyTaskCopyStates
-from bot.users.keyboards import main_user_kb, task_control_kb, TaskAction
-from bot.users.schemas import NewUserSchema
+from bot.users.keyboards import main_user_kb
 from daily_task.service import DailyTaskService
-from scheduler.service import DTNotifySchedulerService
-from user.service import UserService
+from notifier.service import NotifySchedulerService
 
-user_router = Router()
-
-
-@user_router.message(CommandStart())
-async def cmd_start(message: Message, state: FSMContext):
-    await state.clear()
-    registered_user = await UserService.get_user_by_tg_id(message.from_user.id)
-    if registered_user is None:
-        new_user = NewUserSchema(
-            tg_id=message.from_user.id,
-            username=message.from_user.username,
-            first_name=message.from_user.first_name,
-            last_name=message.from_user.last_name,
-        )
-        await UserService.register_new_user(**new_user.model_dump())
-    logger.debug("command start pressed")
-    await message.answer("welcome!", reply_markup=main_user_kb())
+main_daily_tasks_router = Router()
 
 
-@user_router.callback_query(F.data == "get_today_tasks")
+@main_daily_tasks_router.callback_query(F.data == "get_today_tasks")
 async def get_today_tasks(callback: CallbackQuery):
     user_tasks = await DailyTaskService.get_today_tasks_from_tg(callback.from_user.id)
     if not user_tasks:
@@ -47,20 +27,20 @@ async def get_today_tasks(callback: CallbackQuery):
         await callback.message.answer(msg_text, reply_markup=task_control_kb(task.id))
 
 
-@user_router.callback_query(F.data == "new_daily_task")
+@main_daily_tasks_router.callback_query(F.data == "new_daily_task")
 async def new_daily_task(callback: CallbackQuery, dialog_manager: DialogManager):
     await dialog_manager.start(state=DailyTaskCreationStates.name, mode=StartMode.RESET_STACK)
 
 
-@user_router.callback_query(TaskAction.filter(F.action == "delete"))
+@main_daily_tasks_router.callback_query(TaskAction.filter(F.action == "delete"))
 async def delete_task(callback: CallbackQuery, callback_data: TaskAction):
     task_id = callback_data.task_id
     await DailyTaskService.delete_task(task_id=task_id)
     await callback.message.answer(f"deleted task with {task_id=}", reply_markup=main_user_kb())
-    DTNotifySchedulerService.delete_dt_jobs(task_id)
+    NotifySchedulerService.delete_dt_jobs(task_id)
 
 
-@user_router.callback_query(TaskAction.filter(F.action == "copy"))
+@main_daily_tasks_router.callback_query(TaskAction.filter(F.action == "copy"))
 async def copy_task_to_date(callback: CallbackQuery, callback_data: TaskAction, dialog_manager: DialogManager):
     task = await DailyTaskService.get_task(callback_data.task_id)
     await dialog_manager.start(

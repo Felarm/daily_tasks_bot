@@ -9,6 +9,7 @@ from alembic import context
 
 from db.database import Base
 from user.models import User
+from notifier.models import UserNotifierSettings
 from daily_task.models import DailyTask
 from config import settings
 

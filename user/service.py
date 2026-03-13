@@ -1,4 +1,5 @@
 from db.session import get_db_session
+from notifier.dao import UserNotifierSettingsDao
 from user.dao import UserDao
 from user.models import User
 
@@ -17,4 +18,5 @@ class UserService:
             last_name: str | None = None,
     ) -> User | None:
         async with get_db_session() as session:
-            await UserDao(session).new_user(username, tg_id, first_name, last_name)
+            new_user = await UserDao(session).new_user(username, tg_id, first_name, last_name)
+            await UserNotifierSettingsDao(session).create_user_settings(new_user.id)

@@ -3,7 +3,7 @@ from sqlalchemy import insert, select
 from sqlalchemy.exc import SQLAlchemyError
 
 from db.dao import BaseDao
-from user.models import User, NotifySettingsSchema
+from user.models import User
 
 
 class UserDao(BaseDao[User]):
@@ -47,12 +47,4 @@ class UserDao(BaseDao[User]):
             return result.scalar_one_or_none()
         except SQLAlchemyError as e:
             logger.error(f"Error occurred while attempting to find user with {tg_id=}:\n{e}")
-            raise
-
-    async def update_user_notify_settings(self, user: User, new_values: NotifySettingsSchema):
-        user.notify_settings = new_values.model_dump()
-        try:
-            await self._session.commit()
-        except SQLAlchemyError as e:
-            logger.error(f"Error occurred while attempting to update notify_settings of user {user.username}\n{e}")
             raise

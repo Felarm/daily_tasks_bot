@@ -6,8 +6,9 @@ from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import Button, ManagedCalendar
 
+from bot.daily_tasks_dialogs.keyboards import task_control_kb
 from bot.daily_tasks_dialogs.schemas import DTUnsavedSchema, DTProgressSchema
-from bot.users.keyboards import main_user_kb, task_control_kb
+from bot.users.keyboards import main_user_kb
 from daily_task.service import DailyTaskService
 
 

@@ -7,7 +7,7 @@ from loguru import logger
 from bot.controls import start_bot, bot, dp, stop_bot
 from config import settings
 from db.init_db import init_db
-from scheduler.base import jobs_scheduler
+from notifier.base import jobs_scheduler
 
 
 @asynccontextmanager

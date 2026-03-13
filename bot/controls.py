@@ -2,9 +2,11 @@ from aiogram.types import BotCommand, BotCommandScopeDefault
 from loguru import logger
 
 from bot.base import bot, dp
-from bot.daily_tasks_dialogs.dialog import task_creation_dialog_router, task_copy_dialog_router, \
+from bot.daily_tasks_dialogs.dialogs import task_creation_dialog_router, task_copy_dialog_router, \
     task_progress_dialog_router
-from bot.users.router import user_router
+from bot.daily_tasks_dialogs.routers import main_daily_tasks_router
+from bot.notifier_settings.routers import notifier_settings_router
+from bot.users.routers import user_router
 from config import settings
 
 
@@ -14,6 +16,8 @@ async def start_bot():
     ]
     await bot.set_my_commands(commands, BotCommandScopeDefault())
     dp.include_router(user_router)
+    dp.include_router(notifier_settings_router)
+    dp.include_router(main_daily_tasks_router)
     dp.include_router(task_creation_dialog_router)
     dp.include_router(task_copy_dialog_router)
     dp.include_router(task_progress_dialog_router)
