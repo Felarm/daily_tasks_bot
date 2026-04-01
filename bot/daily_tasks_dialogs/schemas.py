@@ -10,6 +10,8 @@ class DTUnsavedSchema(BaseModel):
     start_dt: datetime
     end_dt: datetime
 
+class DTCopySchema(BaseModel):
+    id: int
 
 class DTPreviewSchema(BaseModel):
     name: str

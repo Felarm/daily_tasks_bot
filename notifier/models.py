@@ -1,6 +1,6 @@
 from datetime import time
 
-from sqlalchemy import ForeignKey, Boolean, JSON, Time
+from sqlalchemy import ForeignKey, Boolean, JSON, Time, Integer
 from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -17,3 +17,4 @@ class UserNotifierSettings(Base):
     progress_dt_notifications_enabled: Mapped[bool] = mapped_column(Boolean, nullable=True)
     today_dt_list_notification_time: Mapped[time | None] = mapped_column(Time, nullable=True)
     today_dt_completion_analyze_time: Mapped[time | None] = mapped_column(Time, nullable=True)
+    task_progress_delay_mins: Mapped[int] = mapped_column(Integer, nullable=False, default=5)

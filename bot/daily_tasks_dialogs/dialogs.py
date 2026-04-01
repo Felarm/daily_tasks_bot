@@ -60,12 +60,14 @@ task_progress_dialog_router = Dialog(
     TaskProgressWindows.get_task_progress_window(
         header="did u begin task?",
         approve_id=ApproveWidgetsIds.begin_approve.value,
+        delay_id=ApproveWidgetsIds.delay_start.value,
         disapprove_id=ApproveWidgetsIds.begin_disapprove.value,
         state=DailyTaskProgressStates.begin_state,
     ),
     TaskProgressWindows.get_task_progress_window(
         header="did u end task?",
         approve_id=ApproveWidgetsIds.end_approve.value,
+        delay_id=ApproveWidgetsIds.delay_end.value,
         disapprove_id=ApproveWidgetsIds.end_disapprove.value,
         state=DailyTaskProgressStates.end_state,
     ),

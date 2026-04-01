@@ -8,7 +8,7 @@ from config import settings
 
 
 engine = create_async_engine(url=settings.db_url)
-async_session_maker = async_sessionmaker(engine, class_=AsyncSession)
+async_session_maker = async_sessionmaker(bind=engine, expire_on_commit=False, class_=AsyncSession)
 
 
 @asynccontextmanager

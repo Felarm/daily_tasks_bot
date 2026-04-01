@@ -6,7 +6,7 @@ from bot.daily_tasks_dialogs.keyboards import task_control_kb, TaskAction
 from bot.daily_tasks_dialogs.states import DailyTaskCreationStates, DailyTaskCopyStates
 from bot.users.keyboards import main_user_kb
 from daily_task.service import DailyTaskService
-from notifier.service import NotifySchedulerService
+from notifier.tg_notifier import TgDTaskNotifier
 
 main_daily_tasks_router = Router()
 
@@ -36,8 +36,8 @@ async def new_daily_task(callback: CallbackQuery, dialog_manager: DialogManager)
 async def delete_task(callback: CallbackQuery, callback_data: TaskAction):
     task_id = callback_data.task_id
     await DailyTaskService.delete_task(task_id=task_id)
+    TgDTaskNotifier.delete_dt_jobs(task_id)
     await callback.message.answer(f"deleted task with {task_id=}", reply_markup=main_user_kb())
-    NotifySchedulerService.delete_dt_jobs(task_id)
 
 
 @main_daily_tasks_router.callback_query(TaskAction.filter(F.action == "copy"))

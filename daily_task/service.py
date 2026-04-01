@@ -4,7 +4,7 @@ from typing import Sequence
 from daily_task.dao import DailyTaskDao
 from daily_task.models import DailyTask, DTaskState
 from db.session import get_db_session
-from notifier.service import NotifySchedulerService
+from notifier.tg_notifier import TgDTaskNotifier
 from user.service import UserService
 
 
@@ -35,7 +35,6 @@ class DailyTaskService:
             new_task = await DailyTaskDao(session).create_user_daily_task(user.id, name, start_dt, end_dt, description)
             if not new_task:
                 return None
-            await NotifySchedulerService(new_task, user).add_notifier_jobs()
             return new_task
 
     @staticmethod
@@ -54,6 +53,18 @@ class DailyTaskService:
     async def get_task(task_id: int) -> DailyTask | None:
         async with get_db_session(with_commit=False) as session:
             return await DailyTaskDao(session).get_one_or_none_by_id(task_id)
+
+    @staticmethod
+    async def copy_task(task_id: int, new_start_dt: datetime) -> DailyTask | None:
+        async with get_db_session(with_commit=True) as session:
+            task_to_copy = await DailyTaskDao(session).get_one_or_none_by_id(task_id)
+            if not task_to_copy:
+                return None
+            task_to_copy_duration = task_to_copy.end_dt - task_to_copy.start_dt
+            new_end_dt = new_start_dt + task_to_copy_duration
+            return await DailyTaskDao(session).create_user_daily_task(
+                task_to_copy.user_id, task_to_copy.name, new_start_dt, new_end_dt, task_to_copy.description
+            )
 
     @staticmethod
     async def begin_task(task_id: int, start_dt: datetime) -> None:

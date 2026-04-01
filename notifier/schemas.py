@@ -9,3 +9,4 @@ class UpdatedSettings(BaseModel):
     progress_dt_notifications_enabled: bool | None
     today_dt_list_notification_time: time | None
     today_dt_completion_analyze_time: time | None
+    task_progress_delay_mins: int | None

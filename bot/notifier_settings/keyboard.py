@@ -11,6 +11,7 @@ class SettingsNames(enum.Enum):
     progress_dt_notifications_enabled = "progress_dt_notifications_enabled"
     today_dt_list_notification_time = "today_dt_list_notification_time"
     today_dt_completion_analyze_time = "today_dt_completion_analyze_time"
+    task_progress_delay_mins = "task_progress_delay_mins"
 
 
 class SettingsEditActions(enum.Enum):
@@ -49,6 +50,11 @@ def main_notify_settings_kb(is_edited: bool) -> InlineKeyboardMarkup:
         text="Set time for analyze dialog for todays tasks",
         callback_data=EditSettingType(setting_action=SettingsEditActions.message,
                                       setting_name=SettingsNames.today_dt_completion_analyze_time)
+    )
+    kb.button(
+        text="Set amount of minutes for delaying task",
+        callback_data=EditSettingType(setting_action=SettingsEditActions.message,
+                                      setting_name=SettingsNames.task_progress_delay_mins)
     )
     if is_edited:
         kb.button(text="Save", callback_data="save_edit")
