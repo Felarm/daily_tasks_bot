@@ -15,8 +15,3 @@ class DailyTaskCopyStates(StatesGroup):
     new_task_start_date = State()
     new_task_start_time = State()
     confirmation = State()
-
-
-class DailyTaskProgressStates(StatesGroup):
-    begin_state = State()
-    end_state = State()

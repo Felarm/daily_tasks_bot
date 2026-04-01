@@ -7,9 +7,9 @@ from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import Cancel, Back, Calendar, CalendarConfig, Button
 from aiogram_dialog.widgets.text import Const, Format
 
-from bot.daily_tasks_dialogs.handlers import cancel_creation, process_name, process_description, create_confirmation, \
-    approve_progress, disapprove_progress, process_time_period, process_date_period, delay_progress
-from bot.daily_tasks_dialogs.states import DailyTaskCreationStates
+from bot.daily_tasks.new_tasks_creation.handlers import process_name, cancel_creation, process_description, \
+    process_date_period, process_time_period, create_confirmation
+from bot.daily_tasks.new_tasks_creation.states import DailyTaskCreationStates
 
 
 class DailyTaskCreationWindows:
@@ -68,16 +68,4 @@ class DailyTaskCreationWindows:
             Back(Const("back")),
             state=state,
             getter=getter,
-        )
-
-
-class TaskProgressWindows:
-    @staticmethod
-    def get_task_progress_window(header: str, approve_id: str, delay_id: str, disapprove_id: str, state: State) -> Window:
-        return Window(
-            Const(header),
-            Button(Const("yup"), id=approve_id, on_click=approve_progress),
-            Button(Const("not yet"), id=delay_id, on_click=delay_progress),
-            Button(Const("nope"), id=disapprove_id, on_click=disapprove_progress),
-            state=state,
         )

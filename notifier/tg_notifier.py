@@ -3,7 +3,7 @@ from datetime import timedelta, time, datetime
 
 from loguru import logger
 
-from bot.daily_tasks_dialogs.schemas import DTProgressSchema
+from bot.daily_tasks.schemas import DTProgressSchema
 from daily_task.models import DailyTask
 from notifier.models import UserNotifierSettings
 from notifier.schemas import UpdatedSettings

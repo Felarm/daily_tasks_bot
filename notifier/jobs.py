@@ -1,7 +1,7 @@
 from aiogram_dialog import StartMode
 
 from bot.base import bot, bg_factory
-from bot.daily_tasks_dialogs.states import DailyTaskProgressStates
+from bot.daily_tasks.task_progress.states import DailyTaskProgressStates
 
 
 async def send_user_msg_job(tg_user_id: int, text: str):

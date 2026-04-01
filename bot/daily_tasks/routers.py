@@ -2,8 +2,8 @@ from aiogram import Router, F
 from aiogram.types import CallbackQuery
 from aiogram_dialog import DialogManager, StartMode
 
-from bot.daily_tasks_dialogs.keyboards import task_control_kb, TaskAction
-from bot.daily_tasks_dialogs.states import DailyTaskCreationStates, DailyTaskCopyStates
+from bot.daily_tasks.keyboards import task_control_kb, TaskAction
+from bot.daily_tasks.new_tasks_creation.states import DailyTaskCreationStates, DailyTaskCopyStates
 from bot.users.keyboards import main_user_kb
 from daily_task.service import DailyTaskService
 from notifier.tg_notifier import TgDTaskNotifier
