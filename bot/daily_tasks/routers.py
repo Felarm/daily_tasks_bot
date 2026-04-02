@@ -1,17 +1,20 @@
+from dataclasses import dataclass
+
 from aiogram import Router, F
 from aiogram.types import CallbackQuery
 from aiogram_dialog import DialogManager, StartMode
 
-from bot.daily_tasks.keyboards import task_control_kb, TaskAction
+from bot.daily_tasks.keyboards import task_control_kb, TaskAction, KbDTRoutes
 from bot.daily_tasks.new_tasks_creation.states import DailyTaskCreationStates, DailyTaskCopyStates
 from bot.users.keyboards import main_user_kb
 from daily_task.service import DailyTaskService
 from notifier.tg_notifier import TgDTaskNotifier
 
+
 main_daily_tasks_router = Router()
 
 
-@main_daily_tasks_router.callback_query(F.data == "get_today_tasks")
+@main_daily_tasks_router.callback_query(F.data == KbDTRoutes.get_today_tasks)
 async def get_today_tasks(callback: CallbackQuery):
     user_tasks = await DailyTaskService.get_today_tasks_from_tg(callback.from_user.id)
     if not user_tasks:
@@ -27,12 +30,12 @@ async def get_today_tasks(callback: CallbackQuery):
         await callback.message.answer(msg_text, reply_markup=task_control_kb(task.id))
 
 
-@main_daily_tasks_router.callback_query(F.data == "new_daily_task")
+@main_daily_tasks_router.callback_query(F.data == KbDTRoutes.new_daily_task)
 async def new_daily_task(callback: CallbackQuery, dialog_manager: DialogManager):
     await dialog_manager.start(state=DailyTaskCreationStates.name, mode=StartMode.RESET_STACK)
 
 
-@main_daily_tasks_router.callback_query(TaskAction.filter(F.action == "delete"))
+@main_daily_tasks_router.callback_query(TaskAction.filter(F.action == KbDTRoutes.delete_task))
 async def delete_task(callback: CallbackQuery, callback_data: TaskAction):
     task_id = callback_data.task_id
     await DailyTaskService.delete_task(task_id=task_id)
@@ -40,7 +43,7 @@ async def delete_task(callback: CallbackQuery, callback_data: TaskAction):
     await callback.message.answer(f"deleted task with {task_id=}", reply_markup=main_user_kb())
 
 
-@main_daily_tasks_router.callback_query(TaskAction.filter(F.action == "copy"))
+@main_daily_tasks_router.callback_query(TaskAction.filter(F.action == KbDTRoutes.copy_task_to_date))
 async def copy_task_to_date(callback: CallbackQuery, callback_data: TaskAction, dialog_manager: DialogManager):
     task = await DailyTaskService.get_task(callback_data.task_id)
     await dialog_manager.start(

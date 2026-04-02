@@ -6,6 +6,12 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
 @dataclass
+class KbSettingsRoutes:
+    get_user_settings = "get_user_settings"
+    save_updated_settings = "save_edit"
+
+
+@dataclass
 class SettingsNames:
     enable_all_notifications = "enable_all_notifications"
     mins_before_dt_start = "mins_before_dt_start"
@@ -46,16 +52,16 @@ def main_notify_settings_kb(is_edited: bool) -> InlineKeyboardMarkup:
         callback_data=EditSettingType(setting_name=SettingsNames.task_progress_delay_mins)
     )
     if is_edited:
-        kb.button(text="Save", callback_data="save_edit")
+        kb.button(text="Save", callback_data=KbSettingsRoutes.save_updated_settings)
     kb.adjust(1)
     return kb.as_markup()
 
 
 def edit_notify_settings_kb(w_save: bool) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
-    kb.button(text="Back to settings list", callback_data="get_user_settings")
+    kb.button(text="Back to settings list", callback_data=KbSettingsRoutes.get_user_settings)
     if w_save:
-        kb.button(text="Save", callback_data="save_edit")
+        kb.button(text="Save", callback_data=KbSettingsRoutes.save_updated_settings)
     kb.adjust(1)
     return kb.as_markup()
 

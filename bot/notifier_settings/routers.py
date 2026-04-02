@@ -3,7 +3,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from bot.notifier_settings.handlers import settings_handlers
-from bot.notifier_settings.keyboard import main_notify_settings_kb, edit_notify_settings_kb, EditSettingType
+from bot.notifier_settings.keyboard import main_notify_settings_kb, edit_notify_settings_kb, EditSettingType, \
+    KbSettingsRoutes
 from bot.notifier_settings.states import SpecificSettingsStates, CommonSettingsStates
 from bot.notifier_settings.utils import process_integer_num, process_string_of_nums, process_time_from_string
 from notifier.schemas import UpdatedSettings
@@ -87,7 +88,7 @@ async def edit_today_dt_completion_analyze_time(message: Message, state: FSMCont
     )
 
 
-@notifier_settings_router.callback_query(F.data == "save_edit")
+@notifier_settings_router.callback_query(F.data == KbSettingsRoutes.save_updated_settings)
 async def save_updated_settings(callback: CallbackQuery, state: FSMContext):
     current_settings: UpdatedSettings = await state.get_value("user_settings")
     await TgUserNotifierSettings.update_tg_user_settings(callback.from_user.id, current_settings)
@@ -95,7 +96,7 @@ async def save_updated_settings(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer("Settings saved", reply_markup=edit_notify_settings_kb(False))
 
 
-@notifier_settings_router.callback_query(F.data == "get_user_settings")
+@notifier_settings_router.callback_query(F.data == KbSettingsRoutes.get_user_settings)
 async def get_user_settings(callback: CallbackQuery, state: FSMContext):
     curr_state = await state.get_state()
     if curr_state == CommonSettingsStates.edit:
