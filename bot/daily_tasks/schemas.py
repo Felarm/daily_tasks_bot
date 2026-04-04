@@ -24,6 +24,6 @@ class DTPreviewSchema(BaseModel):
 
 class DTProgressSchema(BaseModel):
     id: int
+    name: str
     start_dt: datetime
     end_dt: datetime
-    state: str

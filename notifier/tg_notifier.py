@@ -5,11 +5,12 @@ from loguru import logger
 
 from bot.daily_tasks.schemas import DTProgressSchema
 from daily_task.models import DailyTask
+from notifier.events import DTaskNotifyEventTypes
 from notifier.models import UserNotifierSettings
 from notifier.schemas import UpdatedSettings
 
 from notifier.base import jobs_scheduler, UserNotifierSettingsService
-from notifier.jobs import send_user_msg_job, start_user_dialog_job, end_user_dialog_job
+from notifier.jobs import send_user_msg_job, ask_about_task_progress_job
 from user.service import UserService
 
 
@@ -25,17 +26,10 @@ class TgUserNotifierSettings:
         return await UserNotifierSettingsService.update_user_settings(user.id, new_values)
 
 
-@dataclass
-class DTaskNotifyEventTypes:
-    notify: str = "notify"
-    start_dialog: str = "start_dialog"
-    end_dialog: str = "end_dialog"
-
-
 EVENT_JOBS = {
     DTaskNotifyEventTypes.notify: send_user_msg_job,
-    DTaskNotifyEventTypes.start_dialog: start_user_dialog_job,
-    DTaskNotifyEventTypes.end_dialog: end_user_dialog_job,
+    DTaskNotifyEventTypes.start_dialog: ask_about_task_progress_job,
+    DTaskNotifyEventTypes.end_dialog: ask_about_task_progress_job,
 }
 
 
@@ -67,8 +61,8 @@ class TgDTaskNotifier:
         if not notify_settings.progress_dt_notifications_enabled:
             logger.warning(f"user with id {notify_settings.user_id} disabled progress dialogs")
             return
-        tasks_and_periods = [(start_user_dialog_job, task.start_dt, DTaskNotifyEventTypes.start_dialog),
-                             (end_user_dialog_job, task.end_dt, DTaskNotifyEventTypes.end_dialog)]
+        tasks_and_periods = [(ask_about_task_progress_job, task.start_dt, DTaskNotifyEventTypes.start_dialog),
+                             (ask_about_task_progress_job, task.end_dt, DTaskNotifyEventTypes.end_dialog)]
         for job, run_time, event_type in tasks_and_periods:
             jobs_scheduler.add_job(
                 func=job,
@@ -79,6 +73,7 @@ class TgDTaskNotifier:
                     "tg_user_id": tg_user_id,
                     "chat_id": tg_user_id,
                     "task_data": task.to_dict(exclude_none=True),
+                    "event": event_type,
                 },
                 id=f"{task.id}:{event_type}",
             )
@@ -106,6 +101,7 @@ class TgDTaskNotifier:
                 "tg_user_id": tg_user_id,
                 "chat_id": tg_user_id,
                 "task_data": task_data.model_dump(),
+                "event": event_type,
             },
             id=f"{task_data.id}:{event_type}",
         )

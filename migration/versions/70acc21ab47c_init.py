@@ -41,7 +41,7 @@ def upgrade() -> None:
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('start_dt', sa.DateTime(), nullable=False),
     sa.Column('end_dt', sa.DateTime(), nullable=False),
-    sa.Column('state', sa.Enum('created', 'in_progres', 'done', 'failed', name='dtaskstate'), nullable=False),
+    sa.Column('state', sa.Enum('created', 'in_progress', 'done', 'failed', name='dtaskstate'), nullable=False),
     sa.Column('real_start_dt', sa.DateTime(), nullable=True),
     sa.Column('real_end_dt', sa.DateTime(), nullable=True),
     sa.Column('created_at', sa.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),

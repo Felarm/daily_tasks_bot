@@ -5,7 +5,7 @@ from aiogram_dialog import DialogManager
 from bot.daily_tasks.schemas import DTPreviewSchema
 
 
-async def get_confirmed_new_task_info(dialog_manager: DialogManager) -> dict[str, str]:
+async def get_confirmed_new_task_info(dialog_manager: DialogManager, **kwargs) -> dict[str, str]:
     task_model = DTPreviewSchema(**dialog_manager.dialog_data)
     confirm_text = (f"so... here is what you planned:\n"
                     f"<b>task name:</b> {task_model.name}\n"
@@ -18,7 +18,7 @@ async def get_confirmed_new_task_info(dialog_manager: DialogManager) -> dict[str
 
 
 
-async def get_confirmed_copy_task_info(dialog_manager: DialogManager) -> dict[str, str]:
+async def get_confirmed_copy_task_info(dialog_manager: DialogManager, **kwargs) -> dict[str, str]:
     task_to_copy_data = DTPreviewSchema(**dialog_manager.start_data["task_to_copy"])
     orig_task_duration = task_to_copy_data.end_dt - task_to_copy_data.start_dt
     new_start_dt: datetime = dialog_manager.dialog_data["start_dt"]

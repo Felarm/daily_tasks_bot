@@ -45,6 +45,12 @@ class DailyTaskService:
             return await DailyTaskDao(session).get_user_daily_tasks(user.id, today)
 
     @staticmethod
+    async def get_active_tasks_from_tg(tg_user_id: int) -> Sequence[DailyTask] | None:
+        user = await UserService.get_user_by_tg_id(tg_user_id)
+        async with get_db_session(with_commit=False) as session:
+            return await DailyTaskDao(session).get_daily_tasks_by_state(user.id, DTaskState.in_progress)
+
+    @staticmethod
     async def delete_task(task_id: int) -> None:
         async with get_db_session() as session:
             await DailyTaskDao(session).delete_daily_task(task_id)
@@ -70,7 +76,7 @@ class DailyTaskService:
     async def begin_task(task_id: int, start_dt: datetime) -> None:
         """set task to in_progress state and adds real_start_dt"""
         async with get_db_session() as session:
-            await DailyTaskDao(session).change_daily_task_state(task_id, DTaskState.in_progres)
+            await DailyTaskDao(session).change_daily_task_state(task_id, DTaskState.in_progress)
             await DailyTaskDao(session).set_daily_task_real_start_dt(task_id, start_dt)
 
     @staticmethod

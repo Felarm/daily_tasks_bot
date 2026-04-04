@@ -80,3 +80,12 @@ class DailyTaskDao(BaseDao[DailyTask]):
         except SQLAlchemyError as e:
             logger.error(f"Error occurred while setting real_end_dt of task with {task_id=} to {real_end_dt}:\n{e}")
             raise
+
+    async def get_daily_tasks_by_state(self, user_id: int, state: DTaskState) -> Sequence[DailyTask] | None:
+        query = select(self.model).filter_by(user_id=user_id, state=state)
+        try:
+            result = await self._session.execute(query)
+            return result.scalars().all()
+        except SQLAlchemyError as e:
+            logger.error(f"Error occurred while getting user tasks for {user_id=} ub state {state}:\n{e}")
+            raise

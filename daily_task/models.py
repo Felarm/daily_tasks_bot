@@ -9,7 +9,7 @@ from db.database import Base
 
 class DTaskState(enum.Enum):
     created = "created"
-    in_progres = "in_progres"
+    in_progress = "in_progress"
     done = "done"
     failed = "failed"
 
