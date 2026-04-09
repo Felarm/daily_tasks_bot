@@ -23,3 +23,11 @@ dependencies = [
     "sqlalchemy>=2.0.49",
     "uvicorn>=0.44.0",
 ]
+
+[tool.pytest]
+minversion = "9.0"
+addopts = ["-ra", "-q"]
+testpaths = [
+    "tests",
+]
+pythonpath = ["."]
