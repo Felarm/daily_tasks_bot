@@ -11,9 +11,9 @@ async def send_user_msg_job(tg_user_id: int, text: str):
 async def ask_about_task_progress_job(tg_user_id: int, chat_id: int, task_data: dict, event: str):
     context = dp.fsm.resolve_context(bot=bot, chat_id=chat_id, user_id=tg_user_id)
     task = DTProgressSchema(**task_data)
-    if event == DTaskNotifyEventTypes.start_dialog:
+    if event == DTaskNotifyEventTypes.begin_task:
         text = f"Did you begin task '{task.name}'?"
-    elif event == DTaskNotifyEventTypes.end_dialog:
+    elif event == DTaskNotifyEventTypes.end_task:
         text = f"Did you end task '{task.name}'?"
     else:
         return

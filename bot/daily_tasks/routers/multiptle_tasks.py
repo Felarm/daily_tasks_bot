@@ -21,7 +21,7 @@ async def get_active_tasks(callback: CallbackQuery):
                     f"<b>start time:</b> {task.start_dt.time().isoformat()}\n"
                     f"<b>end time:</b> {task.end_dt.time().isoformat()}\n"
                     f"<b>state:</b> {task.state.value}")
-        await callback.message.answer(msg_text, reply_markup=task_control_kb(task.id))
+        await callback.message.answer(msg_text, reply_markup=task_control_kb(task.id, task.state))
 
 
 @get_multiple_tasks_router.callback_query(F.data == KbDTPlanRoutes.get_today_tasks)
@@ -38,3 +38,18 @@ async def get_today_tasks(callback: CallbackQuery):
                     f"<b>end time:</b> {task.end_dt.time().isoformat()}\n"
                     f"<b>state:</b> {task.state.value}")
         await callback.message.answer(msg_text, reply_markup=task_control_kb(task.id))
+
+
+@get_multiple_tasks_router.callback_query(F.data == KbDTPlanRoutes.get_current_hour_tasks)
+async def get_current_hour_tasks(callback: CallbackQuery):
+    curr_hour_tasks = await DailyTaskService.get_current_hour_tasks_from_tg(callback.from_user.id)
+    if not curr_hour_tasks:
+        await callback.message.answer("no tasks for current hour planned")
+        return
+    for task in curr_hour_tasks:
+        msg_text = (f"<b>{task.name}</b>\n"
+                    f"{task.description}\n"
+                    f"<b>start time:</b> {task.start_dt.time().isoformat()}\n"
+                    f"<b>end time:</b> {task.end_dt.time().isoformat()}\n"
+                    f"<b>state:</b> {task.state.value}")
+        await callback.message.answer(msg_text, reply_markup=task_control_kb(task.id, task.state))

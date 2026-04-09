@@ -28,8 +28,8 @@ class TgUserNotifierSettings:
 
 EVENT_JOBS = {
     DTaskNotifyEventTypes.notify: send_user_msg_job,
-    DTaskNotifyEventTypes.start_dialog: ask_about_task_progress_job,
-    DTaskNotifyEventTypes.end_dialog: ask_about_task_progress_job,
+    DTaskNotifyEventTypes.begin_task: ask_about_task_progress_job,
+    DTaskNotifyEventTypes.end_task: ask_about_task_progress_job,
 }
 
 
@@ -61,8 +61,8 @@ class TgDTaskNotifier:
         if not notify_settings.progress_dt_notifications_enabled:
             logger.warning(f"user with id {notify_settings.user_id} disabled progress dialogs")
             return
-        tasks_and_periods = [(ask_about_task_progress_job, task.start_dt, DTaskNotifyEventTypes.start_dialog),
-                             (ask_about_task_progress_job, task.end_dt, DTaskNotifyEventTypes.end_dialog)]
+        tasks_and_periods = [(ask_about_task_progress_job, task.start_dt, DTaskNotifyEventTypes.begin_task),
+                             (ask_about_task_progress_job, task.end_dt, DTaskNotifyEventTypes.end_task)]
         for job, run_time, event_type in tasks_and_periods:
             jobs_scheduler.add_job(
                 func=job,
@@ -79,13 +79,17 @@ class TgDTaskNotifier:
             )
 
     @staticmethod
-    def delete_dt_jobs(daily_task_id: int) -> None:
+    def delete_dt_notify_job(daily_task_id: int, event_type: str):
+        job_id = f"{daily_task_id}:{event_type}"
+        existing_job = jobs_scheduler.get_job(job_id)
+        if existing_job:
+            jobs_scheduler.remove_job(job_id)
+            logger.debug(f"deleted notifier job {job_id}")
+
+    @staticmethod
+    def clean_dt_notify_jobs(daily_task_id: int) -> None:
         for event_type in asdict(DTaskNotifyEventTypes()).values():
-            job_id = f"{daily_task_id}:{event_type}"
-            existing_job = jobs_scheduler.get_job(job_id)
-            if existing_job:
-                jobs_scheduler.remove_job(job_id)
-                logger.debug(f"deleted notifier job {job_id}")
+            TgDTaskNotifier.delete_dt_notify_job(daily_task_id, event_type)
 
     @staticmethod
     def reschedule_event(tg_user_id: int, task_data: DTProgressSchema, event_type: str, new_dtime: datetime) -> None:

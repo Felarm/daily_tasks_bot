@@ -99,26 +99,21 @@ async def create_confirmation(callback: CallbackQuery, button: Button, dialog_ma
     if button.widget_id == ConfirmationWidgetIds.create:
         task_data = DTUnsavedSchema(tg_user_id=callback.from_user.id, **dialog_manager.dialog_data)
         if task_data.start_dt <= datetime.now():
-            await callback.message.answer("Task begin datetime is less then now, go back and edit input data")
+            await callback.message.answer(text="Task begin datetime is less then now, go back and edit input data")
             await dialog_manager.back()
             return
         created_task = await DailyTaskService.new_user_task_from_tg(**task_data.model_dump())
         await TgDTaskNotifier.add_created_task_notifications(callback.from_user.id, created_task)
-        await callback.message.answer(
-            text="new task created, now you can try to find it in your tasks list",
-            reply_markup=main_user_kb(),
-        )
+        await callback.message.answer(text="new task created, now you can try to find it in your tasks list")
     elif button.widget_id == ConfirmationWidgetIds.copy:
         task_data = DTCopySchema(**dialog_manager.start_data["task_to_copy"])
         new_start_dt: datetime = dialog_manager.dialog_data["start_dt"]
         if new_start_dt <= datetime.now():
-            await callback.message.answer("Task begin datetime is less then now, go back and edit input data")
+            await callback.message.answer(text="Task begin datetime is less then now, go back and edit input data")
             await dialog_manager.back()
             return
         await DailyTaskService.copy_task(task_data.id, new_start_dt)
-        await callback.message.answer(
-            text=f"task copied to {new_start_dt.isoformat(' ')}"
-        )
+        await callback.message.answer(text=f"task copied to {new_start_dt.isoformat(' ')}")
     else:
         raise ValueError("unknow id of confirmation widget")
 

@@ -1,4 +1,4 @@
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from typing import Sequence
 
 from daily_task.dao import DailyTaskDao
@@ -49,6 +49,17 @@ class DailyTaskService:
         user = await UserService.get_user_by_tg_id(tg_user_id)
         async with get_db_session(with_commit=False) as session:
             return await DailyTaskDao(session).get_daily_tasks_by_state(user.id, DTaskState.in_progress)
+
+    @staticmethod
+    async def get_current_hour_tasks_from_tg(tg_user_id: int) -> Sequence[DailyTask] | None:
+        user = await UserService.get_user_by_tg_id(tg_user_id)
+        now = datetime.now()
+        async with get_db_session(with_commit=False) as session:
+            return await DailyTaskDao(session).get_daily_tasks_by_period(
+                user_id=user.id,
+                p_start_dt=now - timedelta(minutes=30),
+                p_end_dt=now + timedelta(minutes=30),
+            )
 
     @staticmethod
     async def delete_task(task_id: int) -> None:

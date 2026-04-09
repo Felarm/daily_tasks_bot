@@ -9,6 +9,7 @@ from bot.daily_tasks.new_tasks_creation.states import DailyTaskCreationStates, D
 from bot.daily_tasks.keyboards import KbDTPlanRoutes, DTPlanActions, DTProgressActions, KbDTProgressRoutes, \
     task_control_kb
 from bot.daily_tasks.schemas import DTProgressSchema
+from bot.middleware import ClearInlineKeyboardMiddleware
 from bot.users.keyboards import main_user_kb
 from bot.utils import pop_from_fsm_ctx_by_key
 from daily_task.service import DailyTaskService
@@ -17,6 +18,9 @@ from notifier.tg_notifier import TgDTaskNotifier, TgUserNotifierSettings
 
 plan_task_router = Router()
 control_task_state_router = Router()
+plan_task_router.callback_query.middleware(ClearInlineKeyboardMiddleware())
+control_task_state_router.callback_query.middleware(ClearInlineKeyboardMiddleware())
+
 
 
 @plan_task_router.callback_query(F.data == KbDTPlanRoutes.new_daily_task)
@@ -24,15 +28,15 @@ async def start_create_task_dialog(callback: CallbackQuery, dialog_manager: Dial
     await dialog_manager.start(state=DailyTaskCreationStates.name, mode=StartMode.RESET_STACK)
 
 
-@plan_task_router.callback_query(DTPlanActions.filter(F.action == KbDTPlanRoutes.delete_task))
+@plan_task_router.callback_query(DTPlanActions.filter(F.route == KbDTPlanRoutes.delete_task))
 async def delete_task(callback: CallbackQuery, callback_data: DTPlanActions):
     task_id = callback_data.task_id
     await DailyTaskService.delete_task(task_id=task_id)
-    TgDTaskNotifier.delete_dt_jobs(task_id)
+    TgDTaskNotifier.clean_dt_notify_jobs(task_id)
     await callback.message.answer(f"deleted task with {task_id=}", reply_markup=main_user_kb())
 
 
-@plan_task_router.callback_query(DTPlanActions.filter(F.action == KbDTPlanRoutes.copy_task_to_date))
+@plan_task_router.callback_query(DTPlanActions.filter(F.route == KbDTPlanRoutes.copy_task_to_date))
 async def start_copy_task_dialog(callback: CallbackQuery, callback_data: DTPlanActions, dialog_manager: DialogManager):
     task = await DailyTaskService.get_task(callback_data.task_id)
     await dialog_manager.start(
@@ -42,27 +46,41 @@ async def start_copy_task_dialog(callback: CallbackQuery, callback_data: DTPlanA
     )
 
 
-@control_task_state_router.callback_query(DTProgressActions.filter(F.action == KbDTProgressRoutes.approve_task))
+@control_task_state_router.callback_query(DTProgressActions.filter(F.route == KbDTProgressRoutes.begin_task))
+async def begin_task(callback: CallbackQuery, callback_data: DTProgressActions):
+    await DailyTaskService.begin_task(callback_data.task_id, datetime.now())
+    TgDTaskNotifier.delete_dt_notify_job(callback_data.task_id, callback_data.event)
+    await callback.message.answer("ok, lets rooolll")
+
+
+@control_task_state_router.callback_query(DTProgressActions.filter(F.route == KbDTProgressRoutes.end_task))
+async def end_task(callback: CallbackQuery, callback_data: DTProgressActions):
+    await DailyTaskService.end_task(callback_data.task_id, datetime.now())
+    TgDTaskNotifier.delete_dt_notify_job(callback_data.task_id, callback_data.event)
+    await callback.message.answer("yay, you did it")
+
+
+@control_task_state_router.callback_query(DTProgressActions.filter(F.route == KbDTProgressRoutes.approve_task))
 async def approve_progress(callback: CallbackQuery, callback_data: DTProgressActions, state: FSMContext):
     await pop_from_fsm_ctx_by_key(str(callback_data.task_id), state)
-    if callback_data.event == DTaskNotifyEventTypes.start_dialog:
+    if callback_data.event == DTaskNotifyEventTypes.begin_task:
         await DailyTaskService.begin_task(callback_data.task_id, datetime.now())
         await callback.message.answer("ok, lets rooolll")
-    elif callback_data.event == DTaskNotifyEventTypes.end_dialog:
+    elif callback_data.event == DTaskNotifyEventTypes.end_task:
         await DailyTaskService.end_task(callback_data.task_id, datetime.now())
         await callback.message.answer("yay, you did it")
     else:
         await callback.message.answer("hmm.. this button works with created or started task states only")
 
 
-@control_task_state_router.callback_query(DTProgressActions.filter(F.action == KbDTProgressRoutes.delay_task))
+@control_task_state_router.callback_query(DTProgressActions.filter(F.route == KbDTProgressRoutes.delay_task))
 async def delay_progress(callback: CallbackQuery, callback_data: DTProgressActions, state: FSMContext):
     user_settings = await TgUserNotifierSettings.get_tg_user_settings(callback.from_user.id)
     delay_mins = user_settings.task_progress_delay_mins
     task_data = await pop_from_fsm_ctx_by_key(str(callback_data.task_id), state)
     task = DTProgressSchema(**task_data)
     notify_dt = datetime.now() + timedelta(minutes=delay_mins)
-    if callback_data.event == DTaskNotifyEventTypes.start_dialog:
+    if callback_data.event == DTaskNotifyEventTypes.begin_task:
         if notify_dt >= task.end_dt:
             await callback.message.answer(
                 text="Next notification time is greater than planned task end\n"
@@ -70,14 +88,16 @@ async def delay_progress(callback: CallbackQuery, callback_data: DTProgressActio
                      "Copy it to some other datetime or delete if you want",
                 reply_markup=task_control_kb(task.id),
             )
-            TgDTaskNotifier.delete_dt_jobs(task.id)
-    elif callback_data.event == DTaskNotifyEventTypes.end_dialog:
+            TgDTaskNotifier.clean_dt_notify_jobs(task.id)
+            return
+    elif callback_data.event == DTaskNotifyEventTypes.end_task:
         if notify_dt > datetime.combine(task.end_dt.date(), time.max):
             await callback.message.answer(
                 text="Day ended, we'll mark this task as failed\n"
                      "Copy it to some other datetime or delete if you want",
                 reply_markup=task_control_kb(task.id),
             )
+            return
     else:
         await callback.message.answer("hmm.. this button works with created or started task states only")
         return
@@ -85,11 +105,11 @@ async def delay_progress(callback: CallbackQuery, callback_data: DTProgressActio
     await callback.message.answer(f"ok, i'll comeback in {delay_mins} minutes")
 
 
-@control_task_state_router.callback_query(DTProgressActions.filter(F.action == KbDTProgressRoutes.disapprove_task))
+@control_task_state_router.callback_query(DTProgressActions.filter(F.route == KbDTProgressRoutes.disapprove_task))
 async def disapprove_progress(callback: CallbackQuery, callback_data: DTProgressActions, state: FSMContext):
     await pop_from_fsm_ctx_by_key(str(callback_data.task_id), state)
     await DailyTaskService.fail_task(callback_data.task_id)
-    TgDTaskNotifier.delete_dt_jobs(callback_data.task_id)
+    TgDTaskNotifier.clean_dt_notify_jobs(callback_data.task_id)
     await callback.message.answer(
         text="we'll mark this task as failed.\nCopy it to some other datetime or delete if you want",
         reply_markup=task_control_kb(callback_data.task_id),

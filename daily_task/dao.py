@@ -89,3 +89,17 @@ class DailyTaskDao(BaseDao[DailyTask]):
         except SQLAlchemyError as e:
             logger.error(f"Error occurred while getting user tasks for {user_id=} ub state {state}:\n{e}")
             raise
+
+    async def get_daily_tasks_by_period(
+            self, user_id: int, p_start_dt: datetime, p_end_dt: datetime
+    ) -> Sequence[DailyTask] | None:
+        query = select(self.model).filter_by(user_id=user_id).where(
+                p_start_dt <= self.model.start_dt
+            ).where(
+                self.model.start_dt <= p_end_dt
+            )
+        try:
+            result = await self._session.execute(query)
+            return result.scalars().all()
+        except SQLAlchemyError as e:
+            raise e
