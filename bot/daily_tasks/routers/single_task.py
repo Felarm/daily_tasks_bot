@@ -22,7 +22,6 @@ plan_task_router.callback_query.middleware(ClearInlineKeyboardMiddleware())
 control_task_state_router.callback_query.middleware(ClearInlineKeyboardMiddleware())
 
 
-
 @plan_task_router.callback_query(F.data == KbDTPlanRoutes.new_daily_task)
 async def start_create_task_dialog(callback: CallbackQuery, dialog_manager: DialogManager):
     await dialog_manager.start(state=DailyTaskCreationStates.name, mode=StartMode.RESET_STACK)
