@@ -1,7 +1,5 @@
 import os.path
 
-from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from loguru import logger
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -33,7 +31,7 @@ class Settings(BaseSettings):
     @property
     def jobs_store_db_url(self) -> str:
         return (
-            f"postgresql+psycopg2://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/jobs"
+            f"postgresql+psycopg2://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
         )
 
     @property
